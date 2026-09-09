@@ -4,6 +4,7 @@ import API from "../api";
 import SummaryCard from "../components/SummaryCard";
 import ExpenseChart from "../components/ExpenseChart";
 import IncomeExpenseChart from "../components/IncomeExpenseChart";
+import Navbar from "../components/Navbar";
 function Dashboard() {
   const [transactions, setTransactions] = useState([]);
   const [error, setError] = useState("");
@@ -60,6 +61,9 @@ function Dashboard() {
   }, [transactions]);
 
   return (
+  <>
+    <Navbar />
+
     <div className="min-h-screen bg-gray-100 p-6">
 
       <div className="max-w-6xl mx-auto">
@@ -95,18 +99,21 @@ function Dashboard() {
 
         </div>
 
-<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+        {/* Charts */}
 
-  <ExpenseChart
-    transactions={transactions}
-  />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
 
-  <IncomeExpenseChart
-    totalIncome={totalIncome}
-    totalExpenses={totalExpenses}
-  />
+          <ExpenseChart
+            transactions={transactions}
+          />
 
-</div>
+          <IncomeExpenseChart
+            totalIncome={totalIncome}
+            totalExpenses={totalExpenses}
+          />
+
+        </div>
+
         {/* Recent Transactions */}
 
         <div className="bg-white p-6 rounded-lg shadow-md mt-8">
@@ -174,7 +181,8 @@ function Dashboard() {
       </div>
 
     </div>
-  );
+  </>
+);
 }
 
 export default Dashboard;
