@@ -4,11 +4,23 @@ const createTransaction = async (req, res) => {
   try {
     const { type, amount, category, description, date } = req.body;
 
-    if (!type || !amount || !category) {
-      return res.status(400).json({
-        message: "Please provide type, amount and category",
-      });
-    }
+if (!type || amount === undefined || !category) {
+  return res.status(400).json({
+    message: "Please provide type, amount and category",
+  });
+}
+
+if (!["income", "expense"].includes(type)) {
+  return res.status(400).json({
+    message: "Invalid transaction type",
+  });
+}
+
+if (Number(amount) <= 0) {
+  return res.status(400).json({
+    message: "Amount must be greater than 0",
+  });
+}
 
     const transaction = await Transaction.create({
       user: req.user._id,

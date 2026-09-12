@@ -11,8 +11,8 @@ function Register() {
     password: "",
   });
 
-  const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setFormData({
@@ -24,124 +24,140 @@ function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    setMessage("");
-    setError("");
+    if (!formData.name || !formData.email || !formData.password) {
+      setError("Please fill in all fields.");
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
 
     try {
-      const response = await API.post("/auth/register", formData);
+      setLoading(true);
+      setError("");
 
-      setMessage(response.data.message);
+      await API.post("/auth/register", formData);
 
-      setFormData({
-        name: "",
-        email: "",
-        password: "",
-      });
-
-      setTimeout(() => {
-        navigate("/login");
-      }, 1000);
-
+      navigate("/login");
     } catch (error) {
       setError(
-        error.response?.data?.message || "Registration failed"
+        error.response?.data?.message ||
+          "Registration failed. Please try again."
       );
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+    <div className="min-h-screen bg-[#F7F8FA] flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        {/* Brand */}
+        <div className="text-center mb-7">
+          <div className="mx-auto w-12 h-12 rounded-xl bg-blue-600 text-white flex items-center justify-center text-xl font-bold">
+            ₹
+          </div>
 
-      <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-md">
+          <h1 className="mt-4 text-2xl font-bold text-gray-900">
+            Create your account
+          </h1>
 
-        <h1 className="text-3xl font-bold text-center mb-6">
-          Personal Finance Tracker
-        </h1>
-
-        <h2 className="text-xl font-semibold mb-6 text-center">
-          Create Account
-        </h2>
-
-        {message && (
-          <p className="text-green-600 text-center mb-4">
-            {message}
+          <p className="mt-1 text-sm text-gray-500">
+            Start tracking your finances today.
           </p>
-        )}
+        </div>
 
-        {error && (
-          <p className="text-red-600 text-center mb-4">
-            {error}
-          </p>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-
-          <div>
-            <label className="block mb-1 font-medium">
-              Name
-            </label>
-
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              placeholder="Enter your name"
-              className="w-full border border-gray-300 rounded-md px-3 py-2"
-            />
-          </div>
-
-          <div>
-            <label className="block mb-1 font-medium">
-              Email
-            </label>
-
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="Enter your email"
-              className="w-full border border-gray-300 rounded-md px-3 py-2"
-            />
-          </div>
-
-          <div>
-            <label className="block mb-1 font-medium">
-              Password
-            </label>
-
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="Create a password"
-              className="w-full border border-gray-300 rounded-md px-3 py-2"
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="w-full bg-blue-600 text-white py-2 rounded-md font-semibold hover:bg-blue-700"
-          >
+        {/* Card */}
+        <div className="finance-card p-6 sm:p-8">
+          <h2 className="text-xl font-semibold text-gray-900">
             Register
-          </button>
+          </h2>
 
-        </form>
+          <p className="text-sm text-gray-500 mt-1 mb-6">
+            Create an account to manage your transactions.
+          </p>
 
-        <p className="text-center mt-6">
-          Already have an account?{" "}
-          <Link
-            to="/login"
-            className="text-blue-600 font-semibold"
-          >
-            Login
-          </Link>
-        </p>
+          {error && (
+            <div className="mb-5 p-3 rounded-lg bg-red-50 border border-red-100 text-sm text-red-600">
+              {error}
+            </div>
+          )}
 
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Name */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Full name
+              </label>
+
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                placeholder="Your name"
+                className="finance-input"
+              />
+            </div>
+
+            {/* Email */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Email
+              </label>
+
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="you@example.com"
+                className="finance-input"
+              />
+            </div>
+
+            {/* Password */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Password
+              </label>
+
+              <input
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="At least 6 characters"
+                className="finance-input"
+              />
+
+              <p className="text-xs text-gray-400 mt-1.5">
+                Password must contain at least 6 characters.
+              </p>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="finance-button w-full"
+            >
+              {loading ? "Creating account..." : "Create account"}
+            </button>
+          </form>
+
+          <div className="mt-6 pt-6 border-t border-gray-100 text-center text-sm text-gray-500">
+            Already have an account?{" "}
+            <Link
+              to="/login"
+              className="font-semibold text-blue-600 hover:text-blue-700"
+            >
+              Sign in
+            </Link>
+          </div>
+        </div>
       </div>
-
     </div>
   );
 }

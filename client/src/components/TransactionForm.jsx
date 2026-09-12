@@ -7,11 +7,11 @@ function TransactionForm({ onTransactionAdded }) {
     amount: "",
     category: "",
     description: "",
-    date: "",
+    date: new Date().toISOString().split("T")[0],
   });
 
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setFormData({
@@ -23,15 +23,23 @@ function TransactionForm({ onTransactionAdded }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    setError("");
-    setSuccess("");
+    if (!formData.amount || !formData.category || !formData.date) {
+      setError("Please fill in all required fields.");
+      return;
+    }
 
     try {
+      setLoading(true);
+      setError("");
+
       const token = localStorage.getItem("token");
 
       const response = await API.post(
         "/transactions",
-        formData,
+        {
+          ...formData,
+          amount: Number(formData.amount),
+        },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -39,69 +47,83 @@ function TransactionForm({ onTransactionAdded }) {
         }
       );
 
-      setSuccess("Transaction added successfully");
+      onTransactionAdded(response.data.transaction);
 
       setFormData({
         type: "expense",
         amount: "",
         category: "",
         description: "",
-        date: "",
+        date: new Date().toISOString().split("T")[0],
       });
-
-      onTransactionAdded(response.data.transaction);
-
     } catch (error) {
       setError(
-        error.response?.data?.message ||
-        "Failed to add transaction"
+        error.response?.data?.message || "Failed to add transaction."
       );
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md">
+    <div className="finance-card p-6">
+      <div className="mb-5">
+        <h2 className="text-lg font-semibold text-gray-900">
+          Add Transaction
+        </h2>
 
-      <h2 className="text-xl font-bold mb-4">
-        Add Transaction
-      </h2>
+        <p className="text-sm text-gray-500 mt-1">
+          Record your income or expense.
+        </p>
+      </div>
 
       {error && (
-        <p className="text-red-600 mb-3">
+        <div className="mb-4 px-4 py-3 rounded-lg bg-red-50 border border-red-100 text-sm text-red-600">
           {error}
-        </p>
-      )}
-
-      {success && (
-        <p className="text-green-600 mb-3">
-          {success}
-        </p>
+        </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-
         {/* Type */}
-
         <div>
-          <label className="block mb-1 font-medium">
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">
             Type
           </label>
 
-          <select
-            name="type"
-            value={formData.type}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded-md px-3 py-2"
-          >
-            <option value="expense">Expense</option>
-            <option value="income">Income</option>
-          </select>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() =>
+                setFormData({ ...formData, type: "income" })
+              }
+              className={`py-2.5 rounded-lg border text-sm font-medium transition ${
+                formData.type === "income"
+                  ? "border-green-500 bg-green-50 text-green-700"
+                  : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              Income
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                setFormData({ ...formData, type: "expense" })
+              }
+              className={`py-2.5 rounded-lg border text-sm font-medium transition ${
+                formData.type === "expense"
+                  ? "border-red-500 bg-red-50 text-red-700"
+                  : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              Expense
+            </button>
+          </div>
         </div>
 
         {/* Amount */}
-
         <div>
-          <label className="block mb-1 font-medium">
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">
             Amount
           </label>
 
@@ -112,14 +134,14 @@ function TransactionForm({ onTransactionAdded }) {
             onChange={handleChange}
             placeholder="Enter amount"
             min="0"
-            className="w-full border border-gray-300 rounded-md px-3 py-2"
+            step="0.01"
+            className="finance-input"
           />
         </div>
 
         {/* Category */}
-
         <div>
-          <label className="block mb-1 font-medium">
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">
             Category
           </label>
 
@@ -127,27 +149,36 @@ function TransactionForm({ onTransactionAdded }) {
             name="category"
             value={formData.category}
             onChange={handleChange}
-            className="w-full border border-gray-300 rounded-md px-3 py-2"
-            required
+            className="finance-input"
           >
             <option value="">Select category</option>
-            <option value="Food">Food</option>
-            <option value="Travel">Travel</option>
-            <option value="Shopping">Shopping</option>
-            <option value="Bills">Bills</option>
-            <option value="Entertainment">
-              Entertainment
-            </option>
-            <option value="Health">Health</option>
-            <option value="Salary">Salary</option>
-            <option value="Other">Other</option>
+
+            {formData.type === "expense" ? (
+              <>
+                <option value="Food">Food</option>
+                <option value="Transport">Transport</option>
+                <option value="Shopping">Shopping</option>
+                <option value="Bills">Bills</option>
+                <option value="Entertainment">Entertainment</option>
+                <option value="Health">Health</option>
+                <option value="Education">Education</option>
+                <option value="Other">Other</option>
+              </>
+            ) : (
+              <>
+                <option value="Salary">Salary</option>
+                <option value="Freelance">Freelance</option>
+                <option value="Business">Business</option>
+                <option value="Investment">Investment</option>
+                <option value="Other">Other</option>
+              </>
+            )}
           </select>
         </div>
 
         {/* Description */}
-
         <div>
-          <label className="block mb-1 font-medium">
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">
             Description
           </label>
 
@@ -156,15 +187,14 @@ function TransactionForm({ onTransactionAdded }) {
             name="description"
             value={formData.description}
             onChange={handleChange}
-            placeholder="Enter description"
-            className="w-full border border-gray-300 rounded-md px-3 py-2"
+            placeholder="Optional description"
+            className="finance-input"
           />
         </div>
 
         {/* Date */}
-
         <div>
-          <label className="block mb-1 font-medium">
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">
             Date
           </label>
 
@@ -173,19 +203,18 @@ function TransactionForm({ onTransactionAdded }) {
             name="date"
             value={formData.date}
             onChange={handleChange}
-            className="w-full border border-gray-300 rounded-md px-3 py-2"
+            className="finance-input"
           />
         </div>
 
         <button
           type="submit"
-          className="w-full bg-blue-600 text-white py-2 rounded-md font-semibold hover:bg-blue-700"
+          disabled={loading}
+          className="finance-button w-full"
         >
-          Add Transaction
+          {loading ? "Adding..." : "Add Transaction"}
         </button>
-
       </form>
-
     </div>
   );
 }

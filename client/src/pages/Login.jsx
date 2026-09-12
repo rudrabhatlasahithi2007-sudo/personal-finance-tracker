@@ -11,6 +11,7 @@ function Login() {
   });
 
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setFormData({
@@ -22,101 +23,123 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    setError("");
+    if (!formData.email || !formData.password) {
+      setError("Please enter your email and password.");
+      return;
+    }
 
     try {
-      const response = await API.post(
-        "/auth/login",
-        formData
+      setLoading(true);
+      setError("");
+
+      const response = await API.post("/auth/login", formData);
+
+      localStorage.setItem("token", response.data.token);
+      localStorage.setItem(
+        "user",
+        JSON.stringify(response.data.user)
       );
-
-      const token = response.data.token;
-      const user = response.data.user;
-
-      localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify(user));
 
       navigate("/dashboard");
-
     } catch (error) {
       setError(
-        error.response?.data?.message || "Login failed"
+        error.response?.data?.message ||
+          "Login failed. Please check your credentials."
       );
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+    <div className="min-h-screen bg-[#F7F8FA] flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        {/* Brand */}
+        <div className="text-center mb-7">
+          <div className="mx-auto w-12 h-12 rounded-xl bg-blue-600 text-white flex items-center justify-center text-xl font-bold">
+            ₹
+          </div>
 
-      <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-md">
+          <h1 className="mt-4 text-2xl font-bold text-gray-900">
+            Welcome to FinTrack
+          </h1>
 
-        <h1 className="text-3xl font-bold text-center mb-6">
-          Personal Finance Tracker
-        </h1>
-
-        <h2 className="text-xl font-semibold mb-6 text-center">
-          Login
-        </h2>
-
-        {error && (
-          <p className="text-red-600 text-center mb-4">
-            {error}
+          <p className="mt-1 text-sm text-gray-500">
+            Manage your money with clarity.
           </p>
-        )}
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Card */}
+        <div className="finance-card p-6 sm:p-8">
+          <h2 className="text-xl font-semibold text-gray-900">
+            Sign in
+          </h2>
 
-          <div>
-            <label className="block mb-1 font-medium">
-              Email
-            </label>
+          <p className="text-sm text-gray-500 mt-1 mb-6">
+            Enter your account details to continue.
+          </p>
 
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="Enter your email"
-              className="w-full border border-gray-300 rounded-md px-3 py-2"
-            />
+          {error && (
+            <div className="mb-5 p-3 rounded-lg bg-red-50 border border-red-100 text-sm text-red-600">
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Email
+              </label>
+
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="you@example.com"
+                className="finance-input"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Password
+              </label>
+
+              <input
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="Enter your password"
+                className="finance-input"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="finance-button w-full"
+            >
+              {loading ? "Signing in..." : "Sign in"}
+            </button>
+          </form>
+
+          <div className="mt-6 pt-6 border-t border-gray-100 text-center text-sm text-gray-500">
+            Don't have an account?{" "}
+            <Link
+              to="/register"
+              className="font-semibold text-blue-600 hover:text-blue-700"
+            >
+              Create one
+            </Link>
           </div>
+        </div>
 
-          <div>
-            <label className="block mb-1 font-medium">
-              Password
-            </label>
-
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="Enter your password"
-              className="w-full border border-gray-300 rounded-md px-3 py-2"
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="w-full bg-blue-600 text-white py-2 rounded-md font-semibold hover:bg-blue-700"
-          >
-            Login
-          </button>
-
-        </form>
-
-        <p className="text-center mt-6">
-          Don't have an account?{" "}
-          <Link
-            to="/register"
-            className="text-blue-600 font-semibold"
-          >
-            Register
-          </Link>
+        <p className="text-center text-xs text-gray-400 mt-6">
+          Your personal finance, organized simply.
         </p>
-
       </div>
-
     </div>
   );
 }

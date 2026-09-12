@@ -1,22 +1,29 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import API from "../api";
 
-function EditTransactionForm({
-  transaction,
-  onTransactionUpdated,
-  onCancel,
-}) {
+function EditTransactionForm({ transaction, onUpdated, onCancel }) {
   const [formData, setFormData] = useState({
-    type: transaction.type,
-    amount: transaction.amount,
-    category: transaction.category,
-    description: transaction.description || "",
-    date: transaction.date
-      ? transaction.date.split("T")[0]
-      : "",
+    type: "expense",
+    amount: "",
+    category: "",
+    description: "",
+    date: "",
   });
 
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (transaction) {
+      setFormData({
+        type: transaction.type,
+        amount: transaction.amount,
+        category: transaction.category,
+        description: transaction.description || "",
+        date: new Date(transaction.date).toISOString().split("T")[0],
+      });
+    }
+  }, [transaction]);
 
   const handleChange = (e) => {
     setFormData({
@@ -28,9 +35,10 @@ function EditTransactionForm({
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    setError("");
-
     try {
+      setLoading(true);
+      setError("");
+
       const token = localStorage.getItem("token");
 
       const response = await API.put(
@@ -46,35 +54,46 @@ function EditTransactionForm({
         }
       );
 
-      onTransactionUpdated(response.data.transaction);
-
+      onUpdated(response.data.transaction);
     } catch (error) {
-      console.error(error);
-
       setError(
-        error.response?.data?.message ||
-          "Failed to update transaction"
+        error.response?.data?.message || "Failed to update transaction."
       );
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md">
+    <div className="finance-card p-6">
+      <div className="flex items-center justify-between mb-5">
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900">
+            Edit Transaction
+          </h2>
 
-      <h2 className="text-xl font-bold mb-4">
-        Edit Transaction
-      </h2>
+          <p className="text-sm text-gray-500 mt-1">
+            Update transaction details.
+          </p>
+        </div>
+
+        <button
+          onClick={onCancel}
+          className="text-gray-400 hover:text-gray-700 text-xl"
+        >
+          ×
+        </button>
+      </div>
 
       {error && (
-        <p className="text-red-600 mb-4">
+        <div className="mb-4 px-4 py-3 rounded-lg bg-red-50 border border-red-100 text-sm text-red-600">
           {error}
-        </p>
+        </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-
         <div>
-          <label className="block mb-1 font-medium">
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">
             Type
           </label>
 
@@ -82,15 +101,15 @@ function EditTransactionForm({
             name="type"
             value={formData.type}
             onChange={handleChange}
-            className="w-full border border-gray-300 rounded-md px-3 py-2"
+            className="finance-input"
           >
-            <option value="expense">Expense</option>
             <option value="income">Income</option>
+            <option value="expense">Expense</option>
           </select>
         </div>
 
         <div>
-          <label className="block mb-1 font-medium">
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">
             Amount
           </label>
 
@@ -100,36 +119,27 @@ function EditTransactionForm({
             value={formData.amount}
             onChange={handleChange}
             min="0"
-            className="w-full border border-gray-300 rounded-md px-3 py-2"
+            step="0.01"
+            className="finance-input"
           />
         </div>
 
         <div>
-          <label className="block mb-1 font-medium">
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">
             Category
           </label>
 
-          <select
+          <input
+            type="text"
             name="category"
             value={formData.category}
             onChange={handleChange}
-            className="w-full border border-gray-300 rounded-md px-3 py-2"
-          >
-            <option value="Food">Food</option>
-            <option value="Travel">Travel</option>
-            <option value="Shopping">Shopping</option>
-            <option value="Bills">Bills</option>
-            <option value="Entertainment">
-              Entertainment
-            </option>
-            <option value="Health">Health</option>
-            <option value="Salary">Salary</option>
-            <option value="Other">Other</option>
-          </select>
+            className="finance-input"
+          />
         </div>
 
         <div>
-          <label className="block mb-1 font-medium">
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">
             Description
           </label>
 
@@ -138,12 +148,12 @@ function EditTransactionForm({
             name="description"
             value={formData.description}
             onChange={handleChange}
-            className="w-full border border-gray-300 rounded-md px-3 py-2"
+            className="finance-input"
           />
         </div>
 
         <div>
-          <label className="block mb-1 font-medium">
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">
             Date
           </label>
 
@@ -152,31 +162,28 @@ function EditTransactionForm({
             name="date"
             value={formData.date}
             onChange={handleChange}
-            className="w-full border border-gray-300 rounded-md px-3 py-2"
+            className="finance-input"
           />
         </div>
 
-        <div className="flex gap-3">
-
+        <div className="flex gap-2">
           <button
             type="submit"
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+            disabled={loading}
+            className="finance-button flex-1"
           >
-            Update
+            {loading ? "Updating..." : "Update"}
           </button>
 
           <button
             type="button"
             onClick={onCancel}
-            className="border border-gray-300 px-4 py-2 rounded-md"
+            className="finance-secondary-button flex-1"
           >
             Cancel
           </button>
-
         </div>
-
       </form>
-
     </div>
   );
 }
