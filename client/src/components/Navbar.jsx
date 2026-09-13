@@ -50,6 +50,38 @@ function Navbar() {
             <span className="text-lg">↔</span>
             Transactions
           </NavLink>
+          <NavLink to="/budgets" className={linkClass}>
+  <span className="text-lg">₹</span>
+  Budgets
+</NavLink>
+<NavLink
+  to="/recurring-transactions"
+  className={linkClass}
+>
+  <span className="text-lg">↻</span>
+  Recurring
+</NavLink>
+<NavLink
+  to="/savings-goals"
+  className={linkClass}
+>
+  <span className="text-lg">◎</span>
+  Savings Goals
+</NavLink>
+<NavLink
+  to="/insights"
+  className={linkClass}
+>
+  <span className="text-lg">✦</span>
+  Insights
+</NavLink>
+<NavLink
+  to="/health-score"
+  className={linkClass}
+>
+  <span className="text-lg">♥</span>
+  Financial Health
+</NavLink>
         </div>
       </nav>
 
