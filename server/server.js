@@ -34,10 +34,6 @@ app.use(
 app.use("/api/savings-goals", savingsGoalRoutes);
 app.use("/api/insights", insightsRoutes);
 app.use("/api/health-score", healthScoreRoutes);
-app.use(
-  "/api/savings-goals",
-  savingsGoalRoutes
-);
 
 app.get("/", (req, res) => {
   res.send("Personal Finance API is running");
