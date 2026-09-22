@@ -4,7 +4,7 @@ const {
   getFinancialHealthScore,
 } = require("../controllers/healthScoreController");
 
-const protect = require("../middleware/authMiddleware");
+const protect = require("../middleware/auth");
 
 const router = express.Router();
 

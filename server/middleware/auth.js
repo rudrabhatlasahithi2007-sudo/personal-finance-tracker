@@ -7,7 +7,7 @@ const protect = async (req, res, next) => {
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return res.status(401).json({
-        message: "Not authorized, no token",
+        message: "Not authorized. No token provided.",
       });
     }
 
@@ -18,11 +18,13 @@ const protect = async (req, res, next) => {
       process.env.JWT_SECRET
     );
 
-    const user = await User.findById(decoded.userId).select("-password");
+    const user = await User.findById(decoded.id).select(
+      "-password"
+    );
 
     if (!user) {
       return res.status(401).json({
-        message: "User not found",
+        message: "User not found.",
       });
     }
 
@@ -30,8 +32,10 @@ const protect = async (req, res, next) => {
 
     next();
   } catch (error) {
+    console.error("Auth middleware error:", error);
+
     return res.status(401).json({
-      message: "Not authorized, invalid token",
+      message: "Not authorized. Invalid token.",
     });
   }
 };

@@ -4,7 +4,7 @@ const {
   getFinancialInsights,
 } = require("../controllers/insightsController");
 
-const protect = require("../middleware/authMiddleware");
+const protect = require("../middleware/auth");
 
 const router = express.Router();
 
