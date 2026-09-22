@@ -12,20 +12,24 @@ function FinancialHealthScore() {
     currentDate.getFullYear()
   );
 
-  const [data, setData] = useState({
-    score: 0,
-    rating: "No data",
-    summary: {
-      totalIncome: 0,
-      totalExpense: 0,
-      savings: 0,
-      savingsRate: 0,
-    },
-    factors: [],
-  });
-
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const months = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
 
   const fetchHealthScore = async () => {
     try {
@@ -37,10 +41,12 @@ function FinancialHealthScore() {
       );
 
       setData(response.data);
-    } catch (error) {
+    } catch (err) {
+      console.error(err);
+
       setError(
-        error.response?.data?.message ||
-          "Failed to load financial health score."
+        err.response?.data?.message ||
+          "Unable to load financial health."
       );
     } finally {
       setLoading(false);
@@ -51,271 +57,386 @@ function FinancialHealthScore() {
     fetchHealthScore();
   }, [month, year]);
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
+  const formatAmount = (amount) =>
+    `₹${Number(amount || 0).toLocaleString("en-IN")}`;
 
   const getRatingStyle = (rating) => {
-    if (rating === "Excellent") {
-      return "text-green-600";
-    }
+    switch (rating) {
+      case "Excellent":
+        return {
+          text: "text-green-600",
+          bg: "bg-green-50",
+          border: "border-green-100",
+        };
 
-    if (rating === "Good") {
-      return "text-blue-600";
-    }
+      case "Good":
+        return {
+          text: "text-blue-600",
+          bg: "bg-blue-50",
+          border: "border-blue-100",
+        };
 
-    if (rating === "Fair") {
-      return "text-amber-600";
-    }
+      case "Fair":
+        return {
+          text: "text-amber-600",
+          bg: "bg-amber-50",
+          border: "border-amber-100",
+        };
 
-    return "text-red-600";
+      default:
+        return {
+          text: "text-red-600",
+          bg: "bg-red-50",
+          border: "border-red-100",
+        };
+    }
   };
 
-  const getProgressStyle = (percentage) => {
-    if (percentage >= 80) {
-      return "bg-green-500";
-    }
-
-    if (percentage >= 60) {
-      return "bg-blue-500";
-    }
-
-    if (percentage >= 40) {
-      return "bg-amber-500";
-    }
+  const getFactorColor = (percentage) => {
+    if (percentage >= 80) return "bg-green-500";
+    if (percentage >= 60) return "bg-blue-500";
+    if (percentage >= 40) return "bg-amber-500";
 
     return "bg-red-500";
   };
 
-  return (
-    <div className="finance-card p-5 sm:p-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-lg font-semibold text-gray-800">
-            Financial Health Score
-          </h2>
+  if (loading) {
+    return (
+      <div className="space-y-6">
 
-          <p className="mt-1 text-sm text-gray-500">
-            See how healthy your finances are this month.
-          </p>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+
+          <div className="h-80 animate-pulse rounded-2xl border border-slate-200 bg-white" />
+
+          <div className="h-80 animate-pulse rounded-2xl border border-slate-200 bg-white lg:col-span-2" />
+
         </div>
 
-        {/* Month / Year */}
-        <div className="flex gap-2">
-          <select
-            value={month}
-            onChange={(e) =>
-              setMonth(Number(e.target.value))
-            }
-            className="finance-input w-auto"
-          >
-            {[
-              "January",
-              "February",
-              "March",
-              "April",
-              "May",
-              "June",
-              "July",
-              "August",
-              "September",
-              "October",
-              "November",
-              "December",
-            ].map((name, index) => (
-              <option
-                key={index + 1}
-                value={index + 1}
-              >
-                {name}
-              </option>
-            ))}
-          </select>
+        <div className="h-64 animate-pulse rounded-2xl border border-slate-200 bg-white" />
 
-          <select
-            value={year}
-            onChange={(e) =>
-              setYear(Number(e.target.value))
-            }
-            className="finance-input w-auto"
-          >
-            {Array.from(
-              { length: 5 },
-              (_, index) =>
-                currentDate.getFullYear() -
-                2 +
-                index
-            ).map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
-            ))}
-          </select>
-        </div>
       </div>
+    );
+  }
 
-      {/* Error */}
-      {error && (
-        <div className="mt-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+  if (error) {
+    return (
+      <div className="rounded-2xl border border-red-100 bg-red-50 p-6">
+
+        <h3 className="font-semibold text-red-700">
+          Unable to load financial health
+        </h3>
+
+        <p className="mt-1 text-sm text-red-600">
           {error}
-        </div>
-      )}
+        </p>
 
-      {loading ? (
-        <div className="py-10 text-center text-sm text-gray-500">
-          Calculating your financial health...
-        </div>
-      ) : (
-        <>
-          {/* Score */}
-          <div className="mt-8 flex flex-col items-center">
-            <div className="relative flex h-40 w-40 items-center justify-center rounded-full border-8 border-gray-100">
-              <div className="text-center">
-                <p className="text-4xl font-bold text-gray-800">
-                  {data.score}
-                </p>
+        <button
+          onClick={fetchHealthScore}
+          className="mt-4 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
+        >
+          Try Again
+        </button>
 
-                <p className="text-sm text-gray-400">
-                  / 100
-                </p>
-              </div>
-            </div>
+      </div>
+    );
+  }
 
-            <h3
-              className={`mt-4 text-xl font-bold ${getRatingStyle(
-                data.rating
-              )}`}
-            >
-              {data.rating}
-            </h3>
+  if (!data) return null;
 
-            <p className="mt-1 text-sm text-gray-500">
-              Financial health rating
+  const score = Number(data.score || 0);
+
+  const ratingStyle = getRatingStyle(
+    data.rating
+  );
+
+  const factors = data.factors || [];
+
+  return (
+    <div className="space-y-6">
+
+      {/* ================= CONTROLS ================= */}
+
+      <div className="finance-card p-4">
+
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+
+          <div>
+
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+              Analysis Period
             </p>
+
+            <p className="mt-1 text-sm font-semibold text-gray-900">
+              {months[month - 1]} {year}
+            </p>
+
           </div>
 
-          {/* Summary */}
-          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
-              <p className="text-sm text-gray-500">
+          <div className="flex gap-2">
+
+            <select
+              value={month}
+              onChange={(e) =>
+                setMonth(Number(e.target.value))
+              }
+              className="finance-input min-w-[140px]"
+            >
+              {months.map((item, index) => (
+                <option
+                  key={item}
+                  value={index + 1}
+                >
+                  {item}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={year}
+              onChange={(e) =>
+                setYear(Number(e.target.value))
+              }
+              className="finance-input w-[110px]"
+            >
+              {[year - 2, year - 1, year, year + 1].map(
+                (item) => (
+                  <option
+                    key={item}
+                    value={item}
+                  >
+                    {item}
+                  </option>
+                )
+              )}
+            </select>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* ================= SCORE ================= */}
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+
+        <div className="finance-card flex flex-col items-center justify-center p-7">
+
+          <p className="text-sm font-semibold text-slate-500">
+            Financial Health Score
+          </p>
+
+          <div className="relative mt-6 flex h-48 w-48 items-center justify-center rounded-full border-[14px] border-slate-100">
+
+            <div className="text-center">
+
+              <p className="finance-number text-5xl text-gray-900">
+                {score}
+              </p>
+
+              <p className="mt-1 text-xs text-slate-400">
+                out of 100
+              </p>
+
+            </div>
+
+          </div>
+
+          <div
+            className={`mt-6 rounded-full border px-5 py-2 text-sm font-bold ${ratingStyle.bg} ${ratingStyle.border} ${ratingStyle.text}`}
+          >
+            {data.rating || "No data"}
+          </div>
+
+        </div>
+
+        {/* ================= SUMMARY ================= */}
+
+        <div className="finance-card p-6 lg:col-span-2">
+
+          <div className="mb-5">
+
+            <h2 className="text-base font-semibold text-gray-900">
+              Financial Overview
+            </h2>
+
+            <p className="mt-1 text-sm text-slate-500">
+              Your financial activity for the selected month.
+            </p>
+
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+
+            <div className="rounded-xl bg-green-50 p-4">
+
+              <p className="text-xs font-medium text-green-700">
                 Income
               </p>
 
-              <p className="mt-2 text-xl font-bold text-green-600">
-                {formatCurrency(
-                  data.summary.totalIncome
+              <p className="mt-2 text-xl font-bold text-green-700">
+                {formatAmount(
+                  data.summary?.totalIncome
                 )}
               </p>
+
             </div>
 
-            <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
-              <p className="text-sm text-gray-500">
+            <div className="rounded-xl bg-red-50 p-4">
+
+              <p className="text-xs font-medium text-red-700">
                 Expenses
               </p>
 
-              <p className="mt-2 text-xl font-bold text-red-600">
-                {formatCurrency(
-                  data.summary.totalExpense
+              <p className="mt-2 text-xl font-bold text-red-700">
+                {formatAmount(
+                  data.summary?.totalExpense
                 )}
               </p>
+
             </div>
 
-            <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
-              <p className="text-sm text-gray-500">
+            <div className="rounded-xl bg-blue-50 p-4">
+
+              <p className="text-xs font-medium text-blue-700">
                 Savings
               </p>
 
-              <p className="mt-2 text-xl font-bold text-blue-600">
-                {formatCurrency(
-                  data.summary.savings
+              <p className="mt-2 text-xl font-bold text-blue-700">
+                {formatAmount(
+                  data.summary?.savings
                 )}
               </p>
+
             </div>
 
-            <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
-              <p className="text-sm text-gray-500">
+            <div className="rounded-xl bg-slate-50 p-4">
+
+              <p className="text-xs font-medium text-slate-600">
                 Savings Rate
               </p>
 
-              <p className="mt-2 text-xl font-bold text-blue-600">
-                {data.summary.savingsRate}%
+              <p className="mt-2 text-xl font-bold text-slate-800">
+                {data.summary?.savingsRate || 0}%
               </p>
+
             </div>
+
           </div>
 
-          {/* Score Factors */}
-          {data.factors.length > 0 && (
-            <div className="mt-8">
-              <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-500">
-                Score Breakdown
-              </h3>
+        </div>
 
-              <div className="space-y-5">
-                {data.factors.map((factor) => {
-                  const percentage =
-                    factor.maxScore > 0
-                      ? (factor.score /
-                          factor.maxScore) *
-                        100
-                      : 0;
+      </div>
 
-                  return (
-                    <div key={factor.name}>
-                      <div className="mb-2 flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-gray-700">
-                            {factor.name}
-                          </p>
+      {/* ================= FACTORS ================= */}
 
-                          <p className="text-xs text-gray-400">
-                            {factor.value}
-                          </p>
-                        </div>
+      <div className="finance-card p-6">
 
-                        <span className="text-sm font-semibold text-gray-700">
-                          {factor.score}/
-                          {factor.maxScore}
-                        </span>
-                      </div>
+        <div className="mb-6">
 
-                      <div className="h-2 overflow-hidden rounded-full bg-gray-100">
-                        <div
-                          className={`h-full rounded-full transition-all duration-500 ${getProgressStyle(
-                            percentage
-                          )}`}
-                          style={{
-                            width: `${percentage}%`,
-                          }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+          <h2 className="text-base font-semibold text-gray-900">
+            Score Breakdown
+          </h2>
+
+          <p className="mt-1 text-sm text-slate-500">
+            See how your financial score is calculated.
+          </p>
+
+        </div>
+
+        {factors.length === 0 ? (
+
+          <div className="rounded-xl bg-slate-50 px-5 py-12 text-center">
+
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-slate-200 text-slate-500">
+              i
             </div>
-          )}
 
-          {/* No data */}
-          {data.score === 0 &&
-            data.factors.length === 0 && (
-              <div className="mt-8 rounded-xl border border-gray-200 bg-gray-50 p-6 text-center">
-                <p className="font-medium text-gray-700">
-                  Not enough financial data
-                </p>
+            <h3 className="mt-3 text-sm font-semibold text-gray-900">
+              Not enough data
+            </h3>
 
-                <p className="mt-1 text-sm text-gray-500">
-                  Add income and expense transactions
-                  to calculate your health score.
-                </p>
-              </div>
-            )}
-        </>
-      )}
+            <p className="mt-1 text-sm text-slate-500">
+              Add income and expense transactions to calculate your score.
+            </p>
+
+          </div>
+
+        ) : (
+
+          <div className="space-y-6">
+
+            {factors.map((factor, index) => {
+
+              const maxScore =
+                Number(
+                  factor.maxScore ||
+                    factor.maximum ||
+                    factor.max ||
+                    30
+                );
+
+              const factorScore =
+                Number(factor.score || 0);
+
+              const percentage =
+                maxScore > 0
+                  ? Math.round(
+                      (factorScore /
+                        maxScore) *
+                        100
+                    )
+                  : 0;
+
+              return (
+                <div key={index}>
+
+                  <div className="mb-2 flex items-center justify-between">
+
+                    <div>
+
+                      <p className="text-sm font-semibold text-gray-800">
+                        {factor.name ||
+                          factor.title}
+                      </p>
+
+                      {factor.description && (
+                        <p className="mt-1 text-xs text-slate-400">
+                          {factor.description}
+                        </p>
+                      )}
+
+                    </div>
+
+                    <span className="text-sm font-bold text-gray-700">
+                      {factorScore}/{maxScore}
+                    </span>
+
+                  </div>
+
+                  <div className="finance-progress">
+
+                    <div
+                      className={`finance-progress-bar ${getFactorColor(
+                        percentage
+                      )}`}
+                      style={{
+                        width: `${percentage}%`,
+                      }}
+                    />
+
+                  </div>
+
+                </div>
+              );
+            })}
+
+          </div>
+
+        )}
+
+      </div>
+
     </div>
   );
 }

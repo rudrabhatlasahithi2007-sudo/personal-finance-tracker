@@ -1,84 +1,64 @@
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 
 function MobileNavbar() {
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    navigate("/login");
-  };
-
-  const linkClass = ({ isActive }) =>
-    `flex-1 text-center py-2 rounded-lg text-sm font-medium ${
-      isActive
-        ? "bg-blue-50 text-blue-600"
-        : "text-gray-500 hover:text-gray-900"
-    }`;
+  const items = [
+    {
+      name: "Home",
+      path: "/dashboard",
+      icon: "⌂",
+    },
+    {
+      name: "Transactions",
+      path: "/transactions",
+      icon: "↔",
+    },
+    {
+      name: "Budgets",
+      path: "/budgets",
+      icon: "◫",
+    },
+    {
+      name: "Goals",
+      path: "/savings-goals",
+      icon: "◎",
+    },
+    {
+      name: "Insights",
+      path: "/insights",
+      icon: "⌁",
+    },
+  ];
 
   return (
-    <>
-      {/* Top bar */}
-      <header className="lg:hidden bg-white border-b border-gray-200 sticky top-0 z-40">
-        <div className="px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold">
-              ₹
-            </div>
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white/95 px-2 py-2 backdrop-blur lg:hidden">
 
-            <span className="font-bold text-gray-900">FinTrack</span>
-          </div>
+      <div className="mx-auto flex max-w-md items-center justify-around">
 
-          <button
-            onClick={handleLogout}
-            className="text-sm font-medium text-gray-500 hover:text-red-600"
+        {items.map((item) => (
+          <NavLink
+            key={item.path}
+            to={item.path}
+            className={({ isActive }) =>
+              `flex min-w-[58px] flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-medium transition ${
+                isActive
+                  ? "bg-blue-50 text-blue-600"
+                  : "text-slate-400 hover:text-slate-600"
+              }`
+            }
           >
-            Sign out
-          </button>
-        </div>
+            <span className="text-lg">
+              {item.icon}
+            </span>
 
-        <div className="px-4 pb-3 flex gap-2">
-          <NavLink to="/dashboard" className={linkClass}>
-            Dashboard
+            <span>
+              {item.name}
+            </span>
           </NavLink>
+        ))}
 
-          <NavLink to="/transactions" className={linkClass}>
-            Transactions
-          </NavLink>
-          <NavLink to="/budgets" className={linkClass}>
-  Budgets
-</NavLink>
-<NavLink
-  to="/recurring-transactions"
-  className={linkClass}
->
-  <span className="text-lg">↻</span>
-  Recurring
-</NavLink>
-<NavLink
-  to="/savings-goals"
-  className={linkClass}
->
-  <span className="text-lg">◎</span>
-  Savings Goals
-</NavLink>
-<NavLink
-  to="/insights"
-  className={linkClass}
->
-  <span className="text-lg">✦</span>
-  Insights
-</NavLink>
-<NavLink
-  to="/health-score"
-  className={linkClass}
->
-  <span className="text-lg">♥</span>
-  Financial Health
-</NavLink>
-        </div>
-      </header>
-    </>
+      </div>
+
+    </nav>
   );
 }
 

@@ -1,21 +1,21 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import API from "../api";
+import api from "../api";
 
 function Login() {
   const navigate = useNavigate();
 
-  const [formData, setFormData] = useState({
+  const [form, setForm] = useState({
     email: "",
     password: "",
   });
 
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
+    setForm({
+      ...form,
       [e.target.name]: e.target.value,
     });
   };
@@ -23,28 +23,42 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.email || !formData.password) {
+    setError("");
+
+    if (!form.email || !form.password) {
       setError("Please enter your email and password.");
       return;
     }
 
     try {
       setLoading(true);
-      setError("");
 
-      const response = await API.post("/auth/login", formData);
+      const response = await api.post(
+        "/auth/login",
+        form
+      );
 
-      localStorage.setItem("token", response.data.token);
+      const token =
+        response.data.token;
+
+      const user =
+        response.data.user;
+
+      localStorage.setItem(
+        "token",
+        token
+      );
+
       localStorage.setItem(
         "user",
-        JSON.stringify(response.data.user)
+        JSON.stringify(user)
       );
 
       navigate("/dashboard");
-    } catch (error) {
+    } catch (err) {
       setError(
-        error.response?.data?.message ||
-          "Login failed. Please check your credentials."
+        err.response?.data?.message ||
+          "Invalid email or password."
       );
     } finally {
       setLoading(false);
@@ -52,94 +66,139 @@ function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F7F8FA] flex items-center justify-center p-4">
+    <div className="flex min-h-screen items-center justify-center bg-[#f8fafc] px-4 py-8">
+
       <div className="w-full max-w-md">
-        {/* Brand */}
-        <div className="text-center mb-7">
-          <div className="mx-auto w-12 h-12 rounded-xl bg-blue-600 text-white flex items-center justify-center text-xl font-bold">
+
+        {/* BRAND */}
+
+        <div className="mb-8 text-center">
+
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600 text-xl font-bold text-white shadow-sm">
             ₹
           </div>
 
-          <h1 className="mt-4 text-2xl font-bold text-gray-900">
-            Welcome to FinTrack
+          <h1 className="mt-4 text-2xl font-bold tracking-tight text-gray-900">
+            FinanceFlow
           </h1>
 
-          <p className="mt-1 text-sm text-gray-500">
-            Manage your money with clarity.
+          <p className="mt-1 text-sm text-slate-500">
+            Manage your money with confidence.
           </p>
+
         </div>
 
-        {/* Card */}
+        {/* CARD */}
+
         <div className="finance-card p-6 sm:p-8">
-          <h2 className="text-xl font-semibold text-gray-900">
-            Sign in
-          </h2>
 
-          <p className="text-sm text-gray-500 mt-1 mb-6">
-            Enter your account details to continue.
-          </p>
+          <div className="mb-6">
 
-          {error && (
-            <div className="mb-5 p-3 rounded-lg bg-red-50 border border-red-100 text-sm text-red-600">
-              {error}
-            </div>
-          )}
+            <h2 className="text-xl font-bold text-gray-900">
+              Welcome back
+            </h2>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+            <p className="mt-1 text-sm text-slate-500">
+              Sign in to access your dashboard.
+            </p>
+
+          </div>
+
+          <form
+            onSubmit={handleSubmit}
+            className="space-y-5"
+          >
+
+            {/* EMAIL */}
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Email
+
+              <label className="mb-2 block text-sm font-medium text-gray-700">
+                Email Address
               </label>
 
               <input
                 type="email"
                 name="email"
-                value={formData.email}
+                value={form.email}
                 onChange={handleChange}
                 placeholder="you@example.com"
+                autoComplete="email"
                 className="finance-input"
               />
+
             </div>
 
+            {/* PASSWORD */}
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Password
-              </label>
+
+              <div className="mb-2 flex items-center justify-between">
+
+                <label className="text-sm font-medium text-gray-700">
+                  Password
+                </label>
+
+              </div>
 
               <input
                 type="password"
                 name="password"
-                value={formData.password}
+                value={form.password}
                 onChange={handleChange}
                 placeholder="Enter your password"
+                autoComplete="current-password"
                 className="finance-input"
               />
+
             </div>
+
+            {/* ERROR */}
+
+            {error && (
+              <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
+                {error}
+              </div>
+            )}
+
+            {/* SUBMIT */}
 
             <button
               type="submit"
               disabled={loading}
-              className="finance-button w-full"
+              className="finance-button w-full disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {loading ? "Signing in..." : "Sign in"}
+              {loading
+                ? "Signing in..."
+                : "Sign In"}
             </button>
+
           </form>
 
-          <div className="mt-6 pt-6 border-t border-gray-100 text-center text-sm text-gray-500">
-            Don't have an account?{" "}
-            <Link
-              to="/register"
-              className="font-semibold text-blue-600 hover:text-blue-700"
-            >
-              Create one
-            </Link>
+          {/* REGISTER */}
+
+          <div className="mt-6 border-t border-slate-100 pt-6 text-center">
+
+            <p className="text-sm text-slate-500">
+              Don't have an account?{" "}
+              <Link
+                to="/register"
+                className="font-semibold text-blue-600 hover:text-blue-700"
+              >
+                Create one
+              </Link>
+            </p>
+
           </div>
+
         </div>
 
-        <p className="text-center text-xs text-gray-400 mt-6">
-          Your personal finance, organized simply.
+        <p className="mt-6 text-center text-xs text-slate-400">
+          Personal Finance Tracker
         </p>
+
       </div>
+
     </div>
   );
 }

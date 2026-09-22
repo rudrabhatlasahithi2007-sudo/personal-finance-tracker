@@ -1,33 +1,35 @@
-import { useEffect, useState } from "react";
-import API from "../api";
+import { useState } from "react";
+import api from "../api";
 
-function EditTransactionForm({ transaction, onUpdated, onCancel }) {
-  const [formData, setFormData] = useState({
+function TransactionForm({ onTransactionAdded, onSuccess }) {
+  const [form, setForm] = useState({
     type: "expense",
     amount: "",
-    category: "",
+    category: "Food",
     description: "",
-    date: "",
+    date: new Date()
+      .toISOString()
+      .split("T")[0],
   });
 
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  useEffect(() => {
-    if (transaction) {
-      setFormData({
-        type: transaction.type,
-        amount: transaction.amount,
-        category: transaction.category,
-        description: transaction.description || "",
-        date: new Date(transaction.date).toISOString().split("T")[0],
-      });
-    }
-  }, [transaction]);
+  const categories = [
+    "Food",
+    "Transport",
+    "Shopping",
+    "Bills",
+    "Entertainment",
+    "Health",
+    "Education",
+    "Salary",
+    "Other",
+  ];
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
+    setForm({
+      ...form,
       [e.target.name]: e.target.value,
     });
   };
@@ -35,29 +37,47 @@ function EditTransactionForm({ transaction, onUpdated, onCancel }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    setError("");
+
+    if (!form.amount || Number(form.amount) <= 0) {
+      setError(
+        "Please enter a valid amount."
+      );
+      return;
+    }
+
     try {
       setLoading(true);
-      setError("");
 
-      const token = localStorage.getItem("token");
+      await api.post("/transactions", {
+        ...form,
+        amount: Number(form.amount),
+      });
 
-      const response = await API.put(
-        `/transactions/${transaction._id}`,
-        {
-          ...formData,
-          amount: Number(formData.amount),
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      setForm({
+        type: "expense",
+        amount: "",
+        category: "Food",
+        description: "",
+        date: new Date()
+          .toISOString()
+          .split("T")[0],
+      });
 
-      onUpdated(response.data.transaction);
-    } catch (error) {
+      if (onTransactionAdded) {
+        onTransactionAdded();
+      }
+
+      if (onSuccess) {
+        onSuccess();
+      }
+
+    } catch (err) {
+      console.error(err);
+
       setError(
-        error.response?.data?.message || "Failed to update transaction."
+        err.response?.data?.message ||
+          "Failed to add transaction."
       );
     } finally {
       setLoading(false);
@@ -65,127 +85,175 @@ function EditTransactionForm({ transaction, onUpdated, onCancel }) {
   };
 
   return (
-    <div className="finance-card p-6">
-      <div className="flex items-center justify-between mb-5">
-        <div>
-          <h2 className="text-lg font-semibold text-gray-900">
-            Edit Transaction
-          </h2>
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-5"
+    >
 
-          <p className="text-sm text-gray-500 mt-1">
-            Update transaction details.
-          </p>
-        </div>
+      {/* TYPE */}
 
-        <button
-          onClick={onCancel}
-          className="text-gray-400 hover:text-gray-700 text-xl"
-        >
-          ×
-        </button>
-      </div>
+      <div>
 
-      {error && (
-        <div className="mb-4 px-4 py-3 rounded-lg bg-red-50 border border-red-100 text-sm text-red-600">
-          {error}
-        </div>
-      )}
+        <label className="mb-2 block text-sm font-medium text-gray-700">
+          Transaction Type
+        </label>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">
-            Type
-          </label>
+        <div className="grid grid-cols-2 gap-3">
 
-          <select
-            name="type"
-            value={formData.type}
-            onChange={handleChange}
-            className="finance-input"
-          >
-            <option value="income">Income</option>
-            <option value="expense">Expense</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">
-            Amount
-          </label>
-
-          <input
-            type="number"
-            name="amount"
-            value={formData.amount}
-            onChange={handleChange}
-            min="0"
-            step="0.01"
-            className="finance-input"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">
-            Category
-          </label>
-
-          <input
-            type="text"
-            name="category"
-            value={formData.category}
-            onChange={handleChange}
-            className="finance-input"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">
-            Description
-          </label>
-
-          <input
-            type="text"
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            className="finance-input"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">
-            Date
-          </label>
-
-          <input
-            type="date"
-            name="date"
-            value={formData.date}
-            onChange={handleChange}
-            className="finance-input"
-          />
-        </div>
-
-        <div className="flex gap-2">
           <button
-            type="submit"
-            disabled={loading}
-            className="finance-button flex-1"
+            type="button"
+            onClick={() =>
+              setForm({
+                ...form,
+                type: "expense",
+              })
+            }
+            className={`rounded-xl border px-4 py-3 text-sm font-semibold transition ${
+              form.type === "expense"
+                ? "border-red-200 bg-red-50 text-red-600"
+                : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
+            }`}
           >
-            {loading ? "Updating..." : "Update"}
+            ↘ Expense
           </button>
 
           <button
             type="button"
-            onClick={onCancel}
-            className="finance-secondary-button flex-1"
+            onClick={() =>
+              setForm({
+                ...form,
+                type: "income",
+              })
+            }
+            className={`rounded-xl border px-4 py-3 text-sm font-semibold transition ${
+              form.type === "income"
+                ? "border-green-200 bg-green-50 text-green-600"
+                : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
+            }`}
           >
-            Cancel
+            ↗ Income
           </button>
+
         </div>
-      </form>
-    </div>
+
+      </div>
+
+      {/* AMOUNT */}
+
+      <div>
+
+        <label className="mb-2 block text-sm font-medium text-gray-700">
+          Amount
+        </label>
+
+        <div className="relative">
+
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 font-semibold text-slate-400">
+            ₹
+          </span>
+
+          <input
+            type="number"
+            name="amount"
+            value={form.amount}
+            onChange={handleChange}
+            min="0"
+            step="0.01"
+            placeholder="0.00"
+            className="finance-input pl-8 text-lg font-semibold"
+          />
+
+        </div>
+
+      </div>
+
+      {/* CATEGORY */}
+
+      <div>
+
+        <label className="mb-2 block text-sm font-medium text-gray-700">
+          Category
+        </label>
+
+        <select
+          name="category"
+          value={form.category}
+          onChange={handleChange}
+          className="finance-input"
+        >
+          {categories.map((category) => (
+            <option
+              key={category}
+              value={category}
+            >
+              {category}
+            </option>
+          ))}
+        </select>
+
+      </div>
+
+      {/* DESCRIPTION */}
+
+      <div>
+
+        <label className="mb-2 block text-sm font-medium text-gray-700">
+          Description
+        </label>
+
+        <textarea
+          name="description"
+          value={form.description}
+          onChange={handleChange}
+          rows="3"
+          placeholder="Add a note about this transaction..."
+          className="finance-input resize-none"
+        />
+
+      </div>
+
+      {/* DATE */}
+
+      <div>
+
+        <label className="mb-2 block text-sm font-medium text-gray-700">
+          Date
+        </label>
+
+        <input
+          type="date"
+          name="date"
+          value={form.date}
+          onChange={handleChange}
+          className="finance-input"
+        />
+
+      </div>
+
+      {/* ERROR */}
+
+      {error && (
+
+        <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
+          {error}
+        </div>
+
+      )}
+
+      {/* BUTTON */}
+
+      <button
+        type="submit"
+        disabled={loading}
+        className="finance-button w-full disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {loading
+          ? "Saving..."
+          : "Add Transaction"}
+      </button>
+
+    </form>
   );
 }
 
-export default EditTransactionForm;
+export default TransactionForm;

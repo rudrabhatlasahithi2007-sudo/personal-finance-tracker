@@ -1,144 +1,439 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+
 @import "tailwindcss";
+
+/* =========================================================
+   ROOT
+========================================================= */
+
+:root {
+  font-family: "Inter", sans-serif;
+
+  --bg: #f8fafc;
+  --card: #ffffff;
+
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+
+  --success: #16a34a;
+  --danger: #dc2626;
+  --warning: #d97706;
+
+  --text: #111827;
+  --text-secondary: #64748b;
+
+  --border: #e2e8f0;
+}
+
+/* =========================================================
+   RESET
+========================================================= */
 
 * {
   box-sizing: border-box;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0;
-  font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-    "Segoe UI", sans-serif;
-  background: #f7f8fa;
-  color: #1f2937;
+  background: var(--bg);
+  color: var(--text);
+
+  font-family: "Inter", sans-serif;
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 button,
 input,
 select,
 textarea {
-  font: inherit;
+  font-family: inherit;
 }
 
 button {
   cursor: pointer;
 }
 
-a {
-  text-decoration: none;
-  color: inherit;
+button:disabled {
+  cursor: not-allowed;
 }
 
-/* ---------- Animations ---------- */
+/* =========================================================
+   HEADINGS
+========================================================= */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  letter-spacing: -0.025em;
+}
+
+/* =========================================================
+   FINANCE CARD
+========================================================= */
+
+.finance-card {
+  background: var(--card);
+
+  border: 1px solid var(--border);
+
+  border-radius: 16px;
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.finance-card:hover {
+  border-color: #d8dee8;
+
+  box-shadow:
+    0 10px 30px
+    rgba(15, 23, 42, 0.06);
+}
+
+/* =========================================================
+   INPUT
+========================================================= */
+
+.finance-input {
+  width: 100%;
+
+  border: 1px solid var(--border);
+
+  border-radius: 10px;
+
+  background: #ffffff;
+
+  padding: 11px 13px;
+
+  color: var(--text);
+
+  font-size: 14px;
+
+  outline: none;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.finance-input:hover {
+  border-color: #cbd5e1;
+}
+
+.finance-input:focus {
+  border-color: var(--primary);
+
+  box-shadow:
+    0 0 0 3px
+    rgba(37, 99, 235, 0.1);
+}
+
+.finance-input::placeholder {
+  color: #94a3b8;
+}
+
+/* =========================================================
+   BUTTON
+========================================================= */
+
+.finance-button {
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 8px;
+
+  border: none;
+
+  border-radius: 10px;
+
+  background: var(--primary);
+
+  color: white;
+
+  padding: 10px 16px;
+
+  font-size: 14px;
+
+  font-weight: 600;
+
+  transition:
+    background 0.2s ease,
+    transform 0.15s ease,
+    box-shadow 0.2s ease;
+}
+
+.finance-button:hover {
+  background: var(--primary-hover);
+
+  box-shadow:
+    0 5px 15px
+    rgba(37, 99, 235, 0.2);
+}
+
+.finance-button:active {
+  transform: translateY(1px);
+}
+
+/* =========================================================
+   SECONDARY BUTTON
+========================================================= */
+
+.finance-secondary-button {
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 8px;
+
+  border: 1px solid var(--border);
+
+  border-radius: 10px;
+
+  background: white;
+
+  color: #374151;
+
+  padding: 10px 16px;
+
+  font-size: 14px;
+
+  font-weight: 600;
+
+  transition: all 0.2s ease;
+}
+
+.finance-secondary-button:hover {
+  background: #f8fafc;
+
+  border-color: #cbd5e1;
+}
+
+/* =========================================================
+   SIDEBAR
+========================================================= */
+
+.finance-sidebar {
+  background: #ffffff;
+
+  border-right: 1px solid var(--border);
+}
+
+/* =========================================================
+   NAVIGATION
+========================================================= */
+
+.finance-nav-item {
+  display: flex;
+
+  align-items: center;
+
+  gap: 11px;
+
+  padding: 10px 12px;
+
+  border-radius: 10px;
+
+  color: #64748b;
+
+  font-size: 14px;
+
+  font-weight: 500;
+
+  transition: all 0.2s ease;
+}
+
+.finance-nav-item:hover {
+  background: #f1f5f9;
+
+  color: #1e293b;
+}
+
+.finance-nav-item.active {
+  background: #eff6ff;
+
+  color: #2563eb;
+
+  font-weight: 600;
+}
+
+/* =========================================================
+   NUMBERS
+========================================================= */
+
+.finance-number {
+  font-variant-numeric: tabular-nums;
+
+  letter-spacing: -0.04em;
+
+  font-weight: 700;
+}
+
+/* =========================================================
+   BADGES
+========================================================= */
+
+.finance-badge {
+  display: inline-flex;
+
+  align-items: center;
+
+  padding: 4px 9px;
+
+  border-radius: 999px;
+
+  font-size: 12px;
+
+  font-weight: 600;
+}
+
+.finance-badge-success {
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.finance-badge-danger {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.finance-badge-warning {
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.finance-badge-info {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+/* =========================================================
+   PROGRESS BAR
+========================================================= */
+
+.finance-progress {
+  width: 100%;
+
+  height: 7px;
+
+  background: #e2e8f0;
+
+  border-radius: 999px;
+
+  overflow: hidden;
+}
+
+.finance-progress-bar {
+  height: 100%;
+
+  border-radius: inherit;
+
+  transition: width 0.5s ease;
+}
+
+/* =========================================================
+   PAGE ANIMATION
+========================================================= */
 
 @keyframes fadeUp {
   from {
     opacity: 0;
-    transform: translateY(12px);
+
+    transform: translateY(8px);
   }
 
   to {
     opacity: 1;
+
     transform: translateY(0);
   }
 }
 
-.animate-fade-up {
-  animation: fadeUp 0.45s ease-out both;
+.page-enter {
+  animation:
+    fadeUp 0.35s ease-out;
 }
 
-/* ---------- Common card ---------- */
+/* =========================================================
+   LOADING
+========================================================= */
 
-.finance-card {
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 14px;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+@keyframes pulseSoft {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.55;
+  }
 }
 
-/* ---------- Inputs ---------- */
-
-.finance-input {
-  width: 100%;
-  border: 1px solid #d1d5db;
-  background: #ffffff;
-  color: #1f2937;
-  border-radius: 9px;
-  padding: 10px 12px;
-  outline: none;
-  transition:
-    border-color 0.2s,
-    box-shadow 0.2s;
+.animate-pulse {
+  animation:
+    pulseSoft 1.5s ease-in-out infinite;
 }
 
-.finance-input:focus {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-}
-
-.finance-input::placeholder {
-  color: #9ca3af;
-}
-
-/* ---------- Primary button ---------- */
-
-.finance-button {
-  border: none;
-  background: #2563eb;
-  color: white;
-  border-radius: 9px;
-  padding: 10px 16px;
-  font-weight: 600;
-  transition:
-    background 0.2s,
-    transform 0.2s;
-}
-
-.finance-button:hover {
-  background: #1d4ed8;
-  transform: translateY(-1px);
-}
-
-.finance-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-}
-
-/* ---------- Secondary button ---------- */
-
-.finance-secondary-button {
-  border: 1px solid #d1d5db;
-  background: white;
-  color: #374151;
-  border-radius: 9px;
-  padding: 9px 14px;
-  font-weight: 500;
-  transition:
-    background 0.2s,
-    border-color 0.2s;
-}
-
-.finance-secondary-button:hover {
-  background: #f9fafb;
-  border-color: #9ca3af;
-}
-
-/* ---------- Scrollbar ---------- */
+/* =========================================================
+   SCROLLBAR
+========================================================= */
 
 ::-webkit-scrollbar {
   width: 7px;
+  height: 7px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f7f8fa;
+  background: #f8fafc;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #d1d5db;
+  background: #cbd5e1;
+
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af;
+  background: #94a3b8;
+}
+
+/* =========================================================
+   TEXT SELECTION
+========================================================= */
+
+::selection {
+  background:
+    rgba(37, 99, 235, 0.15);
+
+  color: #1e3a8a;
+}
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 768px) {
+  .finance-card {
+    border-radius: 14px;
+  }
+
+  .finance-button,
+  .finance-secondary-button {
+    padding: 9px 13px;
+
+    font-size: 13px;
+  }
 }

@@ -1,20 +1,25 @@
-import { useState } from "react";
-import API from "../api";
+import { useEffect, useState } from "react";
+import api from "../api";
 
-function BudgetForm({ onBudgetAdded }) {
+function BudgetForm({
+  editingBudget,
+  onBudgetCreated,
+  onBudgetUpdated,
+  onCancel,
+}) {
   const currentDate = new Date();
 
-  const [formData, setFormData] = useState({
-    category: "",
+  const [form, setForm] = useState({
+    category: "Food",
     amount: "",
     month: currentDate.getMonth() + 1,
     year: currentDate.getFullYear(),
   });
 
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const expenseCategories = [
+  const categories = [
     "Food",
     "Transport",
     "Shopping",
@@ -25,75 +30,74 @@ function BudgetForm({ onBudgetAdded }) {
     "Other",
   ];
 
-  const months = [
-    { value: 1, label: "January" },
-    { value: 2, label: "February" },
-    { value: 3, label: "March" },
-    { value: 4, label: "April" },
-    { value: 5, label: "May" },
-    { value: 6, label: "June" },
-    { value: 7, label: "July" },
-    { value: 8, label: "August" },
-    { value: 9, label: "September" },
-    { value: 10, label: "October" },
-    { value: 11, label: "November" },
-    { value: 12, label: "December" },
-  ];
+  useEffect(() => {
+    if (editingBudget) {
+      setForm({
+        category: editingBudget.category || "Food",
+        amount: editingBudget.amount || "",
+        month:
+          editingBudget.month ||
+          currentDate.getMonth() + 1,
+        year:
+          editingBudget.year ||
+          currentDate.getFullYear(),
+      });
+    }
+  }, [editingBudget]);
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
+    setForm({
+      ...form,
       [e.target.name]: e.target.value,
     });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     setError("");
 
-    if (!formData.category) {
-      setError("Please select a category.");
-      return;
-    }
-
-    if (!formData.amount || Number(formData.amount) <= 0) {
-      setError("Budget amount must be greater than 0.");
+    if (!form.amount || Number(form.amount) <= 0) {
+      setError("Please enter a valid budget amount.");
       return;
     }
 
     try {
       setLoading(true);
 
-      const token = localStorage.getItem("token");
+      const payload = {
+        category: form.category,
+        amount: Number(form.amount),
+        month: Number(form.month),
+        year: Number(form.year),
+      };
 
-      const response = await API.post(
-        "/budgets",
-        {
-          category: formData.category,
-          amount: Number(formData.amount),
-          month: Number(formData.month),
-          year: Number(formData.year),
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+      if (editingBudget) {
+        await api.put(
+          `/budgets/${editingBudget._id}`,
+          payload
+        );
+
+        if (onBudgetUpdated) {
+          onBudgetUpdated();
         }
-      );
+      } else {
+        await api.post("/budgets", payload);
 
-      onBudgetAdded(response.data.budget);
+        if (onBudgetCreated) {
+          onBudgetCreated();
+        }
+      }
 
-      setFormData({
-        category: "",
+      setForm({
+        category: "Food",
         amount: "",
         month: currentDate.getMonth() + 1,
         year: currentDate.getFullYear(),
       });
-    } catch (error) {
+    } catch (err) {
       setError(
-        error.response?.data?.message ||
-          "Failed to create budget."
+        err.response?.data?.message ||
+          "Unable to save budget."
       );
     } finally {
       setLoading(false);
@@ -101,115 +105,133 @@ function BudgetForm({ onBudgetAdded }) {
   };
 
   return (
-    <div className="finance-card p-6">
-      <div className="mb-5">
-        <h2 className="text-lg font-semibold text-gray-900">
-          Set Monthly Budget
-        </h2>
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-5"
+    >
+      <div>
+        <label className="mb-2 block text-sm font-medium text-gray-700">
+          Category
+        </label>
 
-        <p className="mt-1 text-sm text-gray-500">
-          Set a spending limit for an expense category.
-        </p>
+        <select
+          name="category"
+          value={form.category}
+          onChange={handleChange}
+          className="finance-input"
+        >
+          {categories.map((category) => (
+            <option key={category} value={category}>
+              {category}
+            </option>
+          ))}
+        </select>
       </div>
 
-      {error && (
-        <div className="mb-4 rounded-lg border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
-          {error}
-        </div>
-      )}
+      <div>
+        <label className="mb-2 block text-sm font-medium text-gray-700">
+          Monthly Budget
+        </label>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Category */}
-        <div>
-          <label className="mb-1.5 block text-sm font-medium text-gray-700">
-            Category
-          </label>
+        <div className="relative">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 font-semibold text-slate-400">
+            ₹
+          </span>
 
-          <select
-            name="category"
-            value={formData.category}
+          <input
+            type="number"
+            name="amount"
+            min="1"
+            step="0.01"
+            value={form.amount}
             onChange={handleChange}
-            className="finance-input"
-          >
-            <option value="">Select category</option>
-
-            {expenseCategories.map((category) => (
-              <option key={category} value={category}>
-                {category}
-              </option>
-            ))}
-          </select>
+            placeholder="5000"
+            className="finance-input pl-8"
+          />
         </div>
+      </div>
 
-        {/* Amount */}
+      <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-gray-700">
-            Monthly limit
-          </label>
-
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-              ₹
-            </span>
-
-            <input
-              type="number"
-              name="amount"
-              value={formData.amount}
-              onChange={handleChange}
-              placeholder="5000"
-              min="1"
-              step="0.01"
-              className="finance-input pl-8"
-            />
-          </div>
-        </div>
-
-        {/* Month */}
-        <div>
-          <label className="mb-1.5 block text-sm font-medium text-gray-700">
+          <label className="mb-2 block text-sm font-medium text-gray-700">
             Month
           </label>
 
           <select
             name="month"
-            value={formData.month}
+            value={form.month}
             onChange={handleChange}
             className="finance-input"
           >
-            {months.map((month) => (
-              <option key={month.value} value={month.value}>
-                {month.label}
+            {Array.from({ length: 12 }, (_, index) => (
+              <option
+                key={index + 1}
+                value={index + 1}
+              >
+                {new Date(
+                  2000,
+                  index,
+                  1
+                ).toLocaleString("en-IN", {
+                  month: "long",
+                })}
               </option>
             ))}
           </select>
         </div>
 
-        {/* Year */}
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-gray-700">
+          <label className="mb-2 block text-sm font-medium text-gray-700">
             Year
           </label>
 
-          <input
-            type="number"
+          <select
             name="year"
-            value={formData.year}
+            value={form.year}
             onChange={handleChange}
-            min="2000"
             className="finance-input"
-          />
+          >
+            {[2025, 2026, 2027, 2028].map(
+              (year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              )
+            )}
+          </select>
         </div>
+      </div>
+
+      {error && (
+        <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
+          {error}
+        </div>
+      )}
+
+      <div className="flex gap-3">
+        {editingBudget && onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="finance-secondary-button flex-1"
+          >
+            Cancel
+          </button>
+        )}
 
         <button
           type="submit"
           disabled={loading}
-          className="finance-button w-full"
+          className="finance-button flex-1 disabled:opacity-60"
         >
-          {loading ? "Creating..." : "Create Budget"}
+          {loading
+            ? "Saving..."
+            : editingBudget
+            ? "Update Budget"
+            : "Create Budget"}
         </button>
-      </form>
-    </div>
+      </div>
+    </form>
   );
 }
 

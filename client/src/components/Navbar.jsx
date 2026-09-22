@@ -3,113 +3,147 @@ import { NavLink, useNavigate } from "react-router-dom";
 function Navbar() {
   const navigate = useNavigate();
 
-  const user = JSON.parse(localStorage.getItem("user") || "null");
+  const navItems = [
+    {
+      name: "Dashboard",
+      path: "/dashboard",
+      icon: "▦",
+    },
+    {
+      name: "Transactions",
+      path: "/transactions",
+      icon: "↔",
+    },
+    {
+      name: "Budgets",
+      path: "/budgets",
+      icon: "◫",
+    },
+    {
+      name: "Recurring",
+      path: "/recurring-transactions",
+      icon: "↻",
+    },
+    {
+      name: "Savings Goals",
+      path: "/savings-goals",
+      icon: "◎",
+    },
+    {
+      name: "Insights",
+      path: "/insights",
+      icon: "⌁",
+    },
+    {
+      name: "Financial Health",
+      path: "/health-score",
+      icon: "♥",
+    },
+  ];
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+
     navigate("/login");
   };
 
-  const linkClass = ({ isActive }) =>
-    `flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition ${
-      isActive
-        ? "bg-blue-50 text-blue-600"
-        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-    }`;
-
   return (
-    <aside className="hidden lg:flex fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 flex-col z-40">
-      {/* Logo */}
-      <div className="h-20 flex items-center px-6 border-b border-gray-100">
+    <aside className="finance-sidebar fixed left-0 top-0 z-40 hidden h-screen w-64 flex-col lg:flex">
+
+      {/* LOGO */}
+
+      <div className="flex h-20 items-center border-b border-slate-100 px-6">
+
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-lg">
+
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-lg font-bold text-white shadow-sm">
             ₹
           </div>
 
           <div>
-            <h1 className="font-bold text-gray-900">FinTrack</h1>
-            <p className="text-xs text-gray-500">Personal Finance</p>
+
+            <h1 className="text-base font-bold tracking-tight text-gray-900">
+              FinanceFlow
+            </h1>
+
+            <p className="text-[11px] font-medium text-slate-400">
+              Personal Finance
+            </p>
+
           </div>
+
         </div>
+
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 p-4">
-        <p className="px-4 mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
-          Menu
+      {/* NAVIGATION */}
+
+      <nav className="flex-1 overflow-y-auto px-4 py-6">
+
+        <p className="mb-3 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+          Overview
         </p>
 
         <div className="space-y-1">
-          <NavLink to="/dashboard" className={linkClass}>
-            <span className="text-lg">⌂</span>
-            Dashboard
-          </NavLink>
 
-          <NavLink to="/transactions" className={linkClass}>
-            <span className="text-lg">↔</span>
-            Transactions
-          </NavLink>
-          <NavLink to="/budgets" className={linkClass}>
-  <span className="text-lg">₹</span>
-  Budgets
-</NavLink>
-<NavLink
-  to="/recurring-transactions"
-  className={linkClass}
->
-  <span className="text-lg">↻</span>
-  Recurring
-</NavLink>
-<NavLink
-  to="/savings-goals"
-  className={linkClass}
->
-  <span className="text-lg">◎</span>
-  Savings Goals
-</NavLink>
-<NavLink
-  to="/insights"
-  className={linkClass}
->
-  <span className="text-lg">✦</span>
-  Insights
-</NavLink>
-<NavLink
-  to="/health-score"
-  className={linkClass}
->
-  <span className="text-lg">♥</span>
-  Financial Health
-</NavLink>
+          {navItems.map((item) => (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              className={({ isActive }) =>
+                `finance-nav-item ${
+                  isActive ? "active" : ""
+                }`
+              }
+            >
+
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg text-base">
+                {item.icon}
+              </span>
+
+              <span>
+                {item.name}
+              </span>
+
+            </NavLink>
+          ))}
+
         </div>
+
       </nav>
 
-      {/* User */}
-      <div className="p-4 border-t border-gray-100">
-        <div className="flex items-center gap-3 px-3 py-3 mb-3">
-          <div className="w-9 h-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-semibold">
-            {user?.name?.charAt(0)?.toUpperCase() || "U"}
-          </div>
+      {/* BOTTOM */}
 
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-gray-900 truncate">
-              {user?.name || "User"}
-            </p>
+      <div className="border-t border-slate-100 p-4">
 
-            <p className="text-xs text-gray-500 truncate">
-              {user?.email || ""}
-            </p>
-          </div>
+        <div className="mb-3 rounded-xl bg-slate-50 p-3">
+
+          <p className="text-xs font-semibold text-gray-700">
+            Financial Overview
+          </p>
+
+          <p className="mt-1 text-[11px] leading-4 text-slate-500">
+            Keep track of your spending and savings.
+          </p>
+
         </div>
 
         <button
           onClick={handleLogout}
-          className="w-full px-4 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 transition"
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-500 transition hover:bg-red-50 hover:text-red-600"
         >
-          Sign out
+
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100">
+            ↪
+          </span>
+
+          Logout
+
         </button>
+
       </div>
+
     </aside>
   );
 }

@@ -13,7 +13,7 @@ const recurringTransactionRoutes = require("./routes/recurringTransactionRoutes"
 const savingsGoalRoutes = require("./routes/savingsGoalRoutes");
 const insightsRoutes = require("./routes/insightsRoutes");
 const healthScoreRoutes = require("./routes/healthScoreRoutes");
-
+const savingsGoalRoutes = require("./routes/savingsGoalRoutes");
 const app = express();
 
 const PORT = process.env.PORT || 5000;
@@ -34,6 +34,11 @@ app.use(
 app.use("/api/savings-goals", savingsGoalRoutes);
 app.use("/api/insights", insightsRoutes);
 app.use("/api/health-score", healthScoreRoutes);
+app.use(
+  "/api/savings-goals",
+  savingsGoalRoutes
+);
+
 app.get("/", (req, res) => {
   res.send("Personal Finance API is running");
 });

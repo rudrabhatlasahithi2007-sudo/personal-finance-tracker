@@ -12,19 +12,24 @@ function FinancialInsights() {
     currentDate.getFullYear()
   );
 
-  const [data, setData] = useState({
-    summary: {
-      totalIncome: 0,
-      totalExpense: 0,
-      savings: 0,
-      savingsRate: 0,
-      topCategory: null,
-    },
-    insights: [],
-  });
-
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const months = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
 
   const fetchInsights = async () => {
     try {
@@ -36,9 +41,11 @@ function FinancialInsights() {
       );
 
       setData(response.data);
-    } catch (error) {
+    } catch (err) {
+      console.error(err);
+
       setError(
-        error.response?.data?.message ||
+        err.response?.data?.message ||
           "Failed to load financial insights."
       );
     } finally {
@@ -50,230 +57,280 @@ function FinancialInsights() {
     fetchInsights();
   }, [month, year]);
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
+  const formatAmount = (amount) =>
+    `₹${Number(amount || 0).toLocaleString("en-IN")}`;
 
   const getInsightStyle = (type) => {
     if (type === "positive") {
       return {
-        container:
-          "border-green-200 bg-green-50",
-        icon: "✓",
-        iconStyle:
-          "bg-green-100 text-green-700",
-        titleStyle: "text-green-800",
-        messageStyle: "text-green-700",
+        box: "border-green-100 bg-green-50",
+        icon: "bg-green-100 text-green-600",
+        title: "text-green-800",
+        symbol: "✓",
       };
     }
 
     if (type === "warning") {
       return {
-        container:
-          "border-amber-200 bg-amber-50",
-        icon: "!",
-        iconStyle:
-          "bg-amber-100 text-amber-700",
-        titleStyle: "text-amber-800",
-        messageStyle: "text-amber-700",
+        box: "border-amber-100 bg-amber-50",
+        icon: "bg-amber-100 text-amber-600",
+        title: "text-amber-800",
+        symbol: "!",
       };
     }
 
     return {
-      container:
-        "border-blue-200 bg-blue-50",
-      icon: "i",
-      iconStyle:
-        "bg-blue-100 text-blue-700",
-      titleStyle: "text-blue-800",
-      messageStyle: "text-blue-700",
+      box: "border-blue-100 bg-blue-50",
+      icon: "bg-blue-100 text-blue-600",
+      title: "text-blue-800",
+      symbol: "i",
     };
   };
 
   return (
-    <div className="finance-card p-5 sm:p-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-lg font-semibold text-gray-800">
-            Financial Insights
-          </h2>
+    <div className="space-y-6">
 
-          <p className="mt-1 text-sm text-gray-500">
-            Understand your spending and saving patterns.
-          </p>
+      {/* Controls */}
+
+      <div className="finance-card p-4">
+
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+              Analysis Period
+            </p>
+
+            <p className="mt-1 text-sm font-semibold text-gray-900">
+              {months[month - 1]} {year}
+            </p>
+          </div>
+
+          <div className="flex gap-2">
+
+            <select
+              value={month}
+              onChange={(e) =>
+                setMonth(Number(e.target.value))
+              }
+              className="finance-input min-w-[140px]"
+            >
+              {months.map((item, index) => (
+                <option
+                  key={item}
+                  value={index + 1}
+                >
+                  {item}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={year}
+              onChange={(e) =>
+                setYear(Number(e.target.value))
+              }
+              className="finance-input w-[110px]"
+            >
+              {[year - 2, year - 1, year, year + 1].map(
+                (item) => (
+                  <option
+                    key={item}
+                    value={item}
+                  >
+                    {item}
+                  </option>
+                )
+              )}
+            </select>
+
+          </div>
+
         </div>
 
-        {/* Month and year */}
-        <div className="flex gap-2">
-          <select
-            value={month}
-            onChange={(e) =>
-              setMonth(Number(e.target.value))
-            }
-            className="finance-input w-auto"
-          >
-            {[
-              "January",
-              "February",
-              "March",
-              "April",
-              "May",
-              "June",
-              "July",
-              "August",
-              "September",
-              "October",
-              "November",
-              "December",
-            ].map((name, index) => (
-              <option
-                key={index + 1}
-                value={index + 1}
-              >
-                {name}
-              </option>
-            ))}
-          </select>
-
-          <select
-            value={year}
-            onChange={(e) =>
-              setYear(Number(e.target.value))
-            }
-            className="finance-input w-auto"
-          >
-            {Array.from(
-              {
-                length: 5,
-              },
-              (_, index) =>
-                currentDate.getFullYear() -
-                2 +
-                index
-            ).map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
-            ))}
-          </select>
-        </div>
       </div>
 
-      {/* Error */}
-      {error && (
-        <div className="mt-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-          {error}
+      {/* Loading */}
+
+      {loading && (
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+
+          {[1, 2, 3, 4].map((item) => (
+            <div
+              key={item}
+              className="h-32 animate-pulse rounded-2xl border border-slate-200 bg-white"
+            />
+          ))}
+
         </div>
+
       )}
 
-      {loading ? (
-        <div className="py-10 text-center text-sm text-gray-500">
-          Analyzing your finances...
+      {/* Error */}
+
+      {!loading && error && (
+
+        <div className="rounded-2xl border border-red-100 bg-red-50 p-5">
+
+          <p className="text-sm font-semibold text-red-700">
+            Unable to load insights
+          </p>
+
+          <p className="mt-1 text-sm text-red-600">
+            {error}
+          </p>
+
         </div>
-      ) : (
+
+      )}
+
+      {/* Data */}
+
+      {!loading && !error && data && (
+
         <>
           {/* Summary */}
-          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
-              <p className="text-sm text-gray-500">
-                Income
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+
+            <div className="finance-card p-5">
+              <p className="text-sm text-slate-500">
+                Total Income
               </p>
 
-              <p className="mt-2 text-xl font-bold text-green-600">
-                {formatCurrency(
-                  data.summary.totalIncome
+              <p className="finance-number mt-2 text-2xl text-green-600">
+                {formatAmount(
+                  data.summary?.totalIncome
                 )}
               </p>
             </div>
 
-            <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
-              <p className="text-sm text-gray-500">
-                Expenses
+            <div className="finance-card p-5">
+              <p className="text-sm text-slate-500">
+                Total Expenses
               </p>
 
-              <p className="mt-2 text-xl font-bold text-red-600">
-                {formatCurrency(
-                  data.summary.totalExpense
+              <p className="finance-number mt-2 text-2xl text-red-600">
+                {formatAmount(
+                  data.summary?.totalExpense
                 )}
               </p>
             </div>
 
-            <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
-              <p className="text-sm text-gray-500">
+            <div className="finance-card p-5">
+              <p className="text-sm text-slate-500">
                 Savings
               </p>
 
               <p
-                className={`mt-2 text-xl font-bold ${
-                  data.summary.savings >= 0
+                className={`finance-number mt-2 text-2xl ${
+                  Number(
+                    data.summary?.savings
+                  ) >= 0
                     ? "text-blue-600"
                     : "text-red-600"
                 }`}
               >
-                {formatCurrency(
-                  data.summary.savings
+                {formatAmount(
+                  data.summary?.savings
                 )}
               </p>
             </div>
 
-            <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
-              <p className="text-sm text-gray-500">
+            <div className="finance-card p-5">
+              <p className="text-sm text-slate-500">
                 Savings Rate
               </p>
 
-              <p className="mt-2 text-xl font-bold text-blue-600">
-                {data.summary.savingsRate}%
+              <p className="finance-number mt-2 text-2xl text-blue-600">
+                {data.summary?.savingsRate || 0}%
               </p>
             </div>
+
           </div>
 
-          {/* Top category */}
-          {data.summary.topCategory && (
-            <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4">
-              <p className="text-sm text-gray-500">
-                Highest Spending Category
-              </p>
+          {/* Top Category */}
 
-              <div className="mt-2 flex items-center justify-between gap-4">
-                <p className="font-semibold text-gray-800">
-                  {data.summary.topCategory.category}
-                </p>
+          {data.summary?.topCategory && (
 
-                <p className="font-bold text-gray-800">
-                  {formatCurrency(
-                    data.summary.topCategory.amount
-                  )}
-                </p>
+            <div className="finance-card p-5">
+
+              <div className="flex items-center gap-4">
+
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+                  !
+                </div>
+
+                <div className="flex-1">
+
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                    Highest Spending Category
+                  </p>
+
+                  <div className="mt-1 flex flex-wrap items-center gap-3">
+
+                    <h3 className="font-semibold text-gray-900">
+                      {data.summary.topCategory.category}
+                    </h3>
+
+                    <span className="finance-badge finance-badge-warning">
+                      {formatAmount(
+                        data.summary.topCategory
+                          .amount
+                      )}
+                    </span>
+
+                  </div>
+
+                </div>
+
               </div>
+
             </div>
           )}
 
           {/* Insights */}
-          <div className="mt-6">
-            <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
-              What your finances tell you
-            </h3>
 
-            {data.insights.length === 0 ? (
-              <div className="rounded-xl border border-gray-200 bg-gray-50 p-5 text-center">
-                <p className="font-medium text-gray-700">
-                  Not enough data yet
+          <div>
+
+            <div className="mb-4">
+
+              <h2 className="text-base font-semibold text-gray-900">
+                Financial Observations
+              </h2>
+
+              <p className="mt-1 text-sm text-slate-500">
+                Automatically generated from your transactions.
+              </p>
+
+            </div>
+
+            {data.insights?.length === 0 ? (
+
+              <div className="finance-card px-5 py-14 text-center">
+
+                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
+                  i
+                </div>
+
+                <h3 className="text-sm font-semibold text-gray-900">
+                  Not enough data
+                </h3>
+
+                <p className="mt-1 text-sm text-slate-500">
+                  Add more transactions to generate useful insights.
                 </p>
 
-                <p className="mt-1 text-sm text-gray-500">
-                  Add some transactions to generate
-                  financial insights.
-                </p>
               </div>
+
             ) : (
-              <div className="space-y-3">
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+
                 {data.insights.map(
                   (insight, index) => {
+
                     const style =
                       getInsightStyle(
                         insight.type
@@ -282,38 +339,48 @@ function FinancialInsights() {
                     return (
                       <div
                         key={index}
-                        className={`rounded-xl border p-4 ${style.container}`}
+                        className={`rounded-2xl border p-5 ${style.box}`}
                       >
-                        <div className="flex items-start gap-3">
+
+                        <div className="flex gap-4">
+
                           <div
-                            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold ${style.iconStyle}`}
+                            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl font-bold ${style.icon}`}
                           >
-                            {style.icon}
+                            {style.symbol}
                           </div>
 
                           <div>
-                            <h4
-                              className={`font-semibold ${style.titleStyle}`}
+
+                            <h3
+                              className={`text-sm font-semibold ${style.title}`}
                             >
                               {insight.title}
-                            </h4>
+                            </h3>
 
-                            <p
-                              className={`mt-1 text-sm ${style.messageStyle}`}
-                            >
+                            <p className="mt-2 text-sm leading-6 text-slate-600">
                               {insight.message}
                             </p>
+
                           </div>
+
                         </div>
+
                       </div>
                     );
                   }
                 )}
+
               </div>
+
             )}
+
           </div>
+
         </>
+
       )}
+
     </div>
   );
 }

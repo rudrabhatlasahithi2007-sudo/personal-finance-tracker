@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
-import API from "../api";
+import api from "../api";
 
-import Navbar from "../components/Navbar";
-import MobileNavbar from "../components/MobileNavbar";
 import SummaryCard from "../components/SummaryCard";
 import ExpenseChart from "../components/ExpenseChart";
 import IncomeExpenseChart from "../components/IncomeExpenseChart";
@@ -12,208 +10,344 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const user = JSON.parse(localStorage.getItem("user") || "null");
+  const user = JSON.parse(
+    localStorage.getItem("user") || "null"
+  );
+
+  const fetchTransactions = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const response = await api.get("/transactions");
+
+      const data = response.data;
+
+      if (Array.isArray(data)) {
+        setTransactions(data);
+      } else if (Array.isArray(data.transactions)) {
+        setTransactions(data.transactions);
+      } else {
+        setTransactions([]);
+      }
+    } catch (err) {
+      console.error(err);
+
+      setError(
+        err.response?.data?.message ||
+          "Unable to load dashboard data."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchTransactions = async () => {
-      try {
-        const token = localStorage.getItem("token");
-
-        const response = await API.get("/transactions", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        setTransactions(response.data.transactions || []);
-      } catch (error) {
-        setError(
-          error.response?.data?.message ||
-            "Failed to load dashboard data."
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchTransactions();
   }, []);
 
-  const income = transactions
-    .filter((transaction) => transaction.type === "income")
-    .reduce((total, transaction) => total + Number(transaction.amount), 0);
+  const totalIncome = transactions
+    .filter(
+      (transaction) => transaction.type === "income"
+    )
+    .reduce(
+      (total, transaction) =>
+        total + Number(transaction.amount || 0),
+      0
+    );
 
-  const expenses = transactions
-    .filter((transaction) => transaction.type === "expense")
-    .reduce((total, transaction) => total + Number(transaction.amount), 0);
+  const totalExpense = transactions
+    .filter(
+      (transaction) => transaction.type === "expense"
+    )
+    .reduce(
+      (total, transaction) =>
+        total + Number(transaction.amount || 0),
+      0
+    );
 
-  const balance = income - expenses;
+  const balance = totalIncome - totalExpense;
 
   const recentTransactions = [...transactions]
-    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .sort(
+      (a, b) =>
+        new Date(b.date) - new Date(a.date)
+    )
     .slice(0, 5);
 
-  return (
-    <div className="min-h-screen bg-[#F7F8FA]">
-      <Navbar />
-      <MobileNavbar />
+  const formatAmount = (amount) =>
+    `₹${Number(amount || 0).toLocaleString("en-IN")}`;
 
-      <main className="lg:ml-64 p-4 sm:p-6 lg:p-8">
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="mb-8 animate-fade-up">
-            <p className="text-sm text-gray-500 mb-1">
-              Welcome back,
+  const formatDate = (date) => {
+    if (!date) return "-";
+
+    return new Date(date).toLocaleDateString(
+      "en-IN",
+      {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }
+    );
+  };
+
+  return (
+    <div className="page-enter min-h-screen bg-[#f8fafc]">
+
+      <div className="mx-auto max-w-7xl px-4 py-6 pb-24 sm:px-6 lg:px-8 lg:pb-8">
+
+        {/* HEADER */}
+
+        <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-blue-600">
+              Personal Finance
             </p>
 
-            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                  {user?.name || "User"}'s Dashboard
-                </h1>
+            <h1 className="mt-1 text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
+              Welcome back
+              {user?.name ? `, ${user.name}` : ""}
+            </h1>
 
-                <p className="mt-1 text-gray-500">
-                  Here's an overview of your finances.
-                </p>
-              </div>
-
-              <div className="text-sm text-gray-500">
-                {new Date().toLocaleDateString("en-IN", {
-                  weekday: "long",
-                  day: "numeric",
-                  month: "long",
-                  year: "numeric",
-                })}
-              </div>
-            </div>
+            <p className="mt-2 text-sm text-slate-500">
+              Here's an overview of your financial activity.
+            </p>
           </div>
 
-          {error && (
-            <div className="mb-6 p-4 rounded-lg bg-red-50 border border-red-100 text-red-600 text-sm">
-              {error}
+          <div className="text-left sm:text-right">
+            <p className="text-xs font-medium text-slate-400">
+              Total transactions
+            </p>
+
+            <p className="mt-1 text-lg font-bold text-gray-900">
+              {transactions.length}
+            </p>
+          </div>
+
+        </div>
+
+        {/* ERROR */}
+
+        {error && (
+          <div className="mb-6 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
+            {error}
+          </div>
+        )}
+
+        {/* SUMMARY CARDS */}
+
+        {loading ? (
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+
+            {[1, 2, 3, 4].map((item) => (
+              <div
+                key={item}
+                className="finance-card h-32 animate-pulse bg-white p-5"
+              />
+            ))}
+
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+
+            <SummaryCard
+              title="Total Balance"
+              amount={balance}
+              icon="₹"
+              type="balance"
+              subtitle="Income minus expenses"
+            />
+
+            <SummaryCard
+              title="Total Income"
+              amount={totalIncome}
+              icon="↗"
+              type="income"
+              subtitle="All recorded income"
+            />
+
+            <SummaryCard
+              title="Total Expenses"
+              amount={totalExpense}
+              icon="↘"
+              type="expense"
+              subtitle="All recorded expenses"
+            />
+
+            <SummaryCard
+              title="Transactions"
+              amount={transactions.length}
+              icon="↔"
+              type="default"
+              subtitle="Recorded activities"
+            />
+
+          </div>
+        )}
+
+        {/* CHARTS */}
+
+        <div className="mt-6 grid gap-6 xl:grid-cols-2">
+
+          <ExpenseChart
+            transactions={transactions}
+          />
+
+          <IncomeExpenseChart
+            transactions={transactions}
+          />
+
+        </div>
+
+        {/* RECENT TRANSACTIONS */}
+
+        <div className="finance-card mt-6 overflow-hidden">
+
+          <div className="flex flex-col justify-between gap-3 border-b border-slate-100 p-5 sm:flex-row sm:items-center sm:px-6">
+
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-blue-600">
+                Activity
+              </p>
+
+              <h2 className="mt-1 text-lg font-bold text-gray-900">
+                Recent Transactions
+              </h2>
+
+              <p className="mt-1 text-sm text-slate-500">
+                Your latest income and expenses.
+              </p>
             </div>
-          )}
+
+            <button
+              onClick={() =>
+                (window.location.href =
+                  "/transactions")
+              }
+              className="finance-secondary-button w-fit"
+            >
+              View all
+            </button>
+
+          </div>
 
           {loading ? (
-            <div className="finance-card p-10 text-center text-gray-500">
-              Loading dashboard...
+            <div className="space-y-4 p-6">
+
+              {[1, 2, 3, 4].map((item) => (
+                <div
+                  key={item}
+                  className="h-12 animate-pulse rounded-lg bg-slate-100"
+                />
+              ))}
+
+            </div>
+          ) : recentTransactions.length === 0 ? (
+            <div className="px-6 py-14 text-center">
+
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-xl text-slate-400">
+                ₹
+              </div>
+
+              <h3 className="mt-4 text-sm font-semibold text-gray-800">
+                No transactions yet
+              </h3>
+
+              <p className="mt-1 text-sm text-slate-400">
+                Start adding income and expenses to
+                see them here.
+              </p>
+
             </div>
           ) : (
-            <>
-              {/* Summary */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 mb-6">
-                <SummaryCard
-                  title="Current Balance"
-                  amount={balance}
-                  type="balance"
-                />
+            <div className="divide-y divide-slate-100">
 
-                <SummaryCard
-                  title="Total Income"
-                  amount={income}
-                  type="income"
-                />
+              {recentTransactions.map(
+                (transaction) => {
 
-                <SummaryCard
-                  title="Total Expenses"
-                  amount={expenses}
-                  type="expense"
-                />
-              </div>
+                  const isIncome =
+                    transaction.type === "income";
 
-              {/* Charts */}
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
-                <IncomeExpenseChart transactions={transactions} />
-
-                <ExpenseChart transactions={transactions} />
-              </div>
-
-              {/* Recent transactions */}
-              <div className="finance-card overflow-hidden">
-                <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-900">
-                      Recent Transactions
-                    </h2>
-
-                    <p className="text-sm text-gray-500 mt-1">
-                      Your latest financial activity.
-                    </p>
-                  </div>
-
-                  <a
-                    href="/transactions"
-                    className="text-sm font-medium text-blue-600 hover:text-blue-700"
-                  >
-                    View all
-                  </a>
-                </div>
-
-                {recentTransactions.length === 0 ? (
-                  <div className="p-10 text-center">
-                    <p className="text-gray-500 text-sm">
-                      No transactions yet.
-                    </p>
-
-                    <a
-                      href="/transactions"
-                      className="inline-block mt-3 text-sm font-medium text-blue-600"
+                  return (
+                    <div
+                      key={transaction._id}
+                      className="flex items-center justify-between gap-4 px-5 py-4 transition hover:bg-slate-50 sm:px-6"
                     >
-                      Add your first transaction
-                    </a>
-                  </div>
-                ) : (
-                  <div className="divide-y divide-gray-100">
-                    {recentTransactions.map((transaction) => (
-                      <div
-                        key={transaction._id}
-                        className="px-6 py-4 flex items-center justify-between gap-4 hover:bg-gray-50 transition"
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div
-                            className={`w-9 h-9 rounded-full flex items-center justify-center font-semibold ${
-                              transaction.type === "income"
-                                ? "bg-green-50 text-green-600"
-                                : "bg-red-50 text-red-600"
-                            }`}
-                          >
-                            {transaction.type === "income" ? "↑" : "↓"}
-                          </div>
 
-                          <div className="min-w-0">
-                            <p className="font-medium text-gray-900 truncate">
-                              {transaction.category}
-                            </p>
+                      <div className="flex min-w-0 items-center gap-3">
 
-                            <p className="text-xs text-gray-500 mt-1">
-                              {new Date(
-                                transaction.date
-                              ).toLocaleDateString("en-IN")}
-                            </p>
-                          </div>
+                        <div
+                          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-base font-bold ${
+                            isIncome
+                              ? "bg-green-50 text-green-600"
+                              : "bg-red-50 text-red-600"
+                          }`}
+                        >
+                          {isIncome ? "↗" : "↘"}
                         </div>
 
+                        <div className="min-w-0">
+
+                          <p className="truncate text-sm font-semibold text-gray-900">
+                            {transaction.category ||
+                              "Other"}
+                          </p>
+
+                          <p className="mt-1 truncate text-xs text-slate-400">
+                            {transaction.description ||
+                              "No description"}{" "}
+                            •{" "}
+                            {formatDate(
+                              transaction.date
+                            )}
+                          </p>
+
+                        </div>
+
+                      </div>
+
+                      <div className="shrink-0 text-right">
+
                         <p
-                          className={`font-semibold whitespace-nowrap ${
-                            transaction.type === "income"
+                          className={`text-sm font-bold ${
+                            isIncome
                               ? "text-green-600"
                               : "text-red-600"
                           }`}
                         >
-                          {transaction.type === "income" ? "+" : "-"}₹
-                          {Number(
+                          {isIncome ? "+" : "-"}
+                          {formatAmount(
                             transaction.amount
-                          ).toLocaleString("en-IN")}
+                          )}
                         </p>
+
+                        <span
+                          className={`mt-1 inline-block text-[11px] font-medium ${
+                            isIncome
+                              ? "text-green-600"
+                              : "text-red-500"
+                          }`}
+                        >
+                          {isIncome
+                            ? "Income"
+                            : "Expense"}
+                        </span>
+
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </>
+
+                    </div>
+                  );
+                }
+              )}
+
+            </div>
           )}
+
         </div>
-      </main>
+
+      </div>
+
     </div>
   );
 }

@@ -1,44 +1,60 @@
-function SummaryCard({ title, amount, type }) {
+function SummaryCard({
+  title,
+  amount,
+  icon,
+  type = "default",
+  subtitle,
+}) {
   const styles = {
-    balance: {
-      icon: "₹",
-      iconBg: "bg-blue-50",
-      iconText: "text-blue-600",
-      amount: "text-gray-900",
-    },
-
     income: {
-      icon: "↑",
-      iconBg: "bg-green-50",
-      iconText: "text-green-600",
+      icon: "bg-green-50 text-green-600",
       amount: "text-green-600",
     },
 
     expense: {
-      icon: "↓",
-      iconBg: "bg-red-50",
-      iconText: "text-red-600",
+      icon: "bg-red-50 text-red-600",
       amount: "text-red-600",
+    },
+
+    balance: {
+      icon: "bg-blue-50 text-blue-600",
+      amount: "text-blue-600",
+    },
+
+    default: {
+      icon: "bg-slate-100 text-slate-600",
+      amount: "text-gray-900",
     },
   };
 
-  const style = styles[type] || styles.balance;
+  const currentStyle = styles[type] || styles.default;
 
   return (
-    <div className="finance-card p-5 animate-fade-up hover:shadow-md transition-shadow">
+    <div className="finance-card group p-5">
       <div className="flex items-start justify-between">
+        
         <div>
-          <p className="text-sm font-medium text-gray-500">{title}</p>
+          <p className="text-sm font-medium text-slate-500">
+            {title}
+          </p>
 
-          <h2 className={`mt-2 text-2xl font-bold ${style.amount}`}>
+          <h3
+            className={`finance-number mt-3 text-2xl ${currentStyle.amount}`}
+          >
             ₹{Number(amount || 0).toLocaleString("en-IN")}
-          </h2>
+          </h3>
+
+          {subtitle && (
+            <p className="mt-2 text-xs text-slate-400">
+              {subtitle}
+            </p>
+          )}
         </div>
 
         <div
-          className={`w-11 h-11 rounded-xl ${style.iconBg} ${style.iconText} flex items-center justify-center text-xl font-bold`}
+          className={`flex h-11 w-11 items-center justify-center rounded-xl text-lg ${currentStyle.icon}`}
         >
-          {style.icon}
+          {icon}
         </div>
       </div>
     </div>

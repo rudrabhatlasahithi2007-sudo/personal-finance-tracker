@@ -1,43 +1,45 @@
 import { useEffect, useState } from "react";
-import API from "../api";
-
-import Navbar from "../components/Navbar";
-import MobileNavbar from "../components/MobileNavbar";
 import TransactionForm from "../components/TransactionForm";
 import EditTransactionForm from "../components/EditTransactionForm";
-import TransactionList from "../components/TransactionList";
+import api from "../api";
 
 function Transactions() {
-  const [transactions, setTransactions] = useState([]);
-  const [filteredTransactions, setFilteredTransactions] = useState([]);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [editingTransaction, setEditingTransaction] = useState(null);
+  const [transactions, setTransactions] =
+    useState([]);
 
-  const [filters, setFilters] = useState({
-    type: "all",
-    category: "all",
-    fromDate: "",
-    toDate: "",
-  });
+  const [loading, setLoading] =
+    useState(true);
+
+  const [error, setError] =
+    useState("");
+
+  const [editingTransaction, setEditingTransaction] =
+    useState(null);
+
+  const [showForm, setShowForm] =
+    useState(false);
+
+  const [filter, setFilter] =
+    useState("all");
 
   const fetchTransactions = async () => {
     try {
+      setLoading(true);
       setError("");
 
-      const token = localStorage.getItem("token");
+      const response = await api.get(
+        "/transactions"
+      );
 
-      const response = await API.get("/transactions", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      setTransactions(response.data.transactions || []);
-    } catch (error) {
+      setTransactions(
+        Array.isArray(response.data)
+          ? response.data
+          : response.data.transactions || []
+      );
+    } catch (err) {
       setError(
-        error.response?.data?.message ||
-          "Failed to load transactions."
+        err.response?.data?.message ||
+          "Unable to load transactions."
       );
     } finally {
       setLoading(false);
@@ -48,273 +50,379 @@ function Transactions() {
     fetchTransactions();
   }, []);
 
-  useEffect(() => {
-    let result = [...transactions];
-
-    if (filters.type !== "all") {
-      result = result.filter(
-        (transaction) => transaction.type === filters.type
-      );
-    }
-
-    if (filters.category !== "all") {
-      result = result.filter(
-        (transaction) => transaction.category === filters.category
-      );
-    }
-
-    if (filters.fromDate) {
-      result = result.filter(
-        (transaction) =>
-          new Date(transaction.date) >=
-          new Date(filters.fromDate)
-      );
-    }
-
-    if (filters.toDate) {
-      const endDate = new Date(filters.toDate);
-
-      endDate.setHours(23, 59, 59, 999);
-
-      result = result.filter(
-        (transaction) =>
-          new Date(transaction.date) <= endDate
-      );
-    }
-
-    setFilteredTransactions(result);
-  }, [transactions, filters]);
-
-  const handleFilterChange = (e) => {
-    setFilters({
-      ...filters,
-      [e.target.name]: e.target.value,
-    });
-  };
-
-  const clearFilters = () => {
-    setFilters({
-      type: "all",
-      category: "all",
-      fromDate: "",
-      toDate: "",
-    });
-  };
-
-  const handleTransactionAdded = (transaction) => {
-    setTransactions((prev) => [transaction, ...prev]);
-  };
-
-  const handleEdit = (transaction) => {
-    setEditingTransaction(transaction);
-  };
-
-  const handleTransactionUpdated = (updatedTransaction) => {
-    setTransactions((prev) =>
-      prev.map((transaction) =>
-        transaction._id === updatedTransaction._id
-          ? updatedTransaction
-          : transaction
-      )
-    );
-
-    setEditingTransaction(null);
-  };
-
   const handleDelete = async (id) => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this transaction?"
+    const confirmed = window.confirm(
+      "Delete this transaction?"
     );
 
-    if (!confirmDelete) return;
+    if (!confirmed) return;
 
     try {
-      setError("");
-
-      const token = localStorage.getItem("token");
-
-      await API.delete(`/transactions/${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      setTransactions((prev) =>
-        prev.filter((transaction) => transaction._id !== id)
+      await api.delete(
+        `/transactions/${id}`
       );
-    } catch (error) {
+
+      fetchTransactions();
+    } catch (err) {
       setError(
-        error.response?.data?.message ||
-          "Failed to delete transaction."
+        err.response?.data?.message ||
+          "Unable to delete transaction."
       );
     }
   };
 
-  const categories = [
-    ...new Set(transactions.map((transaction) => transaction.category)),
-  ];
+  const filteredTransactions =
+    filter === "all"
+      ? transactions
+      : transactions.filter(
+          (item) => item.type === filter
+        );
+
+  const formatAmount = (amount) =>
+    `₹${Number(amount || 0).toLocaleString(
+      "en-IN"
+    )}`;
+
+  const formatDate = (date) =>
+    new Date(date).toLocaleDateString(
+      "en-IN",
+      {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }
+    );
 
   return (
-    <div className="min-h-screen bg-[#F7F8FA]">
-      <Navbar />
-      <MobileNavbar />
+    <div className="page-enter min-h-screen bg-[#f8fafc]">
 
-      <main className="lg:ml-64 p-4 sm:p-6 lg:p-8">
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="mb-7">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+      <div className="mx-auto max-w-7xl px-4 py-6 pb-24 sm:px-6 lg:px-8 lg:pb-8">
+
+        {/* HEADER */}
+
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-blue-600">
+              Money Management
+            </p>
+
+            <h1 className="mt-1 text-2xl font-bold tracking-tight text-gray-900">
               Transactions
             </h1>
 
-            <p className="mt-1 text-gray-500">
+            <p className="mt-1 text-sm text-slate-500">
               Manage your income and expenses.
             </p>
           </div>
 
-          {error && (
-            <div className="mb-6 p-4 rounded-lg bg-red-50 border border-red-100 text-red-600 text-sm">
-              {error}
-            </div>
-          )}
+          <button
+            onClick={() => {
+              setEditingTransaction(null);
+              setShowForm(true);
+            }}
+            className="finance-button"
+          >
+            + Add Transaction
+          </button>
 
-          {/* Forms */}
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
-            <div className="xl:col-span-1">
-              {editingTransaction ? (
-                <EditTransactionForm
-                  transaction={editingTransaction}
-                  onUpdated={handleTransactionUpdated}
-                  onCancel={() => setEditingTransaction(null)}
-                />
-              ) : (
-                <TransactionForm
-                  onTransactionAdded={handleTransactionAdded}
-                />
-              )}
-            </div>
+        </div>
 
-            {/* Filters */}
-            <div className="xl:col-span-2 finance-card p-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-5">
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    Filter Transactions
-                  </h2>
+        {/* FILTER */}
 
-                  <p className="text-sm text-gray-500 mt-1">
-                    Find transactions quickly.
-                  </p>
-                </div>
+        <div className="mb-5 flex gap-2 overflow-x-auto">
 
-                <button
-                  onClick={clearFilters}
-                  className="finance-secondary-button text-sm"
-                >
-                  Clear filters
-                </button>
+          {[
+            ["all", "All"],
+            ["income", "Income"],
+            ["expense", "Expenses"],
+          ].map(([value, label]) => (
+            <button
+              key={value}
+              onClick={() =>
+                setFilter(value)
+              }
+              className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+                filter === value
+                  ? "bg-blue-600 text-white"
+                  : "border border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+
+        </div>
+
+        {/* FORM */}
+
+        {showForm && (
+          <div className="mb-6 finance-card p-6">
+
+            <div className="mb-5 flex items-center justify-between">
+
+              <div>
+                <h2 className="text-base font-semibold text-gray-900">
+                  Add Transaction
+                </h2>
+
+                <p className="mt-1 text-sm text-slate-500">
+                  Record a new income or expense.
+                </p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Type */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Type
-                  </label>
+              <button
+                onClick={() =>
+                  setShowForm(false)
+                }
+                className="text-xl text-slate-400 hover:text-slate-700"
+              >
+                ×
+              </button>
 
-                  <select
-                    name="type"
-                    value={filters.type}
-                    onChange={handleFilterChange}
-                    className="finance-input"
-                  >
-                    <option value="all">All types</option>
-                    <option value="income">Income</option>
-                    <option value="expense">Expense</option>
-                  </select>
-                </div>
-
-                {/* Category */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Category
-                  </label>
-
-                  <select
-                    name="category"
-                    value={filters.category}
-                    onChange={handleFilterChange}
-                    className="finance-input"
-                  >
-                    <option value="all">All categories</option>
-
-                    {categories.map((category) => (
-                      <option key={category} value={category}>
-                        {category}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* From */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    From date
-                  </label>
-
-                  <input
-                    type="date"
-                    name="fromDate"
-                    value={filters.fromDate}
-                    onChange={handleFilterChange}
-                    className="finance-input"
-                  />
-                </div>
-
-                {/* To */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    To date
-                  </label>
-
-                  <input
-                    type="date"
-                    name="toDate"
-                    value={filters.toDate}
-                    onChange={handleFilterChange}
-                    className="finance-input"
-                  />
-                </div>
-              </div>
-
-              <div className="mt-5 pt-4 border-t border-gray-100 text-sm text-gray-500">
-                Showing{" "}
-                <span className="font-semibold text-gray-900">
-                  {filteredTransactions.length}
-                </span>{" "}
-                of{" "}
-                <span className="font-semibold text-gray-900">
-                  {transactions.length}
-                </span>{" "}
-                transactions
-              </div>
             </div>
+
+            <TransactionForm
+              onTransactionAdded={() => {
+                setShowForm(false);
+                fetchTransactions();
+              }}
+            />
+
+          </div>
+        )}
+
+        {/* EDIT */}
+
+        {editingTransaction && (
+          <div className="mb-6 finance-card p-6">
+
+            <div className="mb-5">
+
+              <h2 className="text-base font-semibold text-gray-900">
+                Edit Transaction
+              </h2>
+
+              <p className="mt-1 text-sm text-slate-500">
+                Update your transaction details.
+              </p>
+
+            </div>
+
+            <EditTransactionForm
+              transaction={editingTransaction}
+              onTransactionUpdated={() => {
+                setEditingTransaction(null);
+                fetchTransactions();
+              }}
+              onCancel={() =>
+                setEditingTransaction(null)
+              }
+            />
+
+          </div>
+        )}
+
+        {/* ERROR */}
+
+        {error && (
+          <div className="mb-5 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
+            {error}
+          </div>
+        )}
+
+        {/* CONTENT */}
+
+        {loading ? (
+
+          <div className="finance-card p-10 text-center">
+            <p className="text-sm text-slate-500">
+              Loading transactions...
+            </p>
           </div>
 
-          {/* Transaction list */}
-          {loading ? (
-            <div className="finance-card p-10 text-center text-gray-500">
-              Loading transactions...
+        ) : filteredTransactions.length === 0 ? (
+
+          <div className="finance-card px-6 py-16 text-center">
+
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-2xl text-slate-400">
+              ₹
             </div>
-          ) : (
-            <TransactionList
-              transactions={filteredTransactions}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-            />
-          )}
-        </div>
-      </main>
+
+            <h2 className="mt-4 text-base font-semibold text-gray-900">
+              No transactions found
+            </h2>
+
+            <p className="mt-1 text-sm text-slate-500">
+              Add your first transaction to start tracking your finances.
+            </p>
+
+          </div>
+
+        ) : (
+
+          <div className="finance-card overflow-hidden">
+
+            <div className="overflow-x-auto">
+
+              <table className="w-full min-w-[700px]">
+
+                <thead className="border-b border-slate-200 bg-slate-50">
+
+                  <tr>
+
+                    <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">
+                      Transaction
+                    </th>
+
+                    <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">
+                      Category
+                    </th>
+
+                    <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">
+                      Date
+                    </th>
+
+                    <th className="px-5 py-4 text-right text-xs font-semibold uppercase tracking-wider text-slate-400">
+                      Amount
+                    </th>
+
+                    <th className="px-5 py-4 text-right text-xs font-semibold uppercase tracking-wider text-slate-400">
+                      Actions
+                    </th>
+
+                  </tr>
+
+                </thead>
+
+                <tbody className="divide-y divide-slate-100">
+
+                  {filteredTransactions.map(
+                    (transaction) => {
+
+                      const isIncome =
+                        transaction.type ===
+                        "income";
+
+                      return (
+                        <tr
+                          key={
+                            transaction._id
+                          }
+                          className="transition hover:bg-slate-50"
+                        >
+
+                          <td className="px-5 py-4">
+
+                            <div className="flex items-center gap-3">
+
+                              <div
+                                className={`flex h-9 w-9 items-center justify-center rounded-lg ${
+                                  isIncome
+                                    ? "bg-green-50 text-green-600"
+                                    : "bg-red-50 text-red-600"
+                                }`}
+                              >
+                                {isIncome
+                                  ? "↗"
+                                  : "↘"}
+                              </div>
+
+                              <div>
+
+                                <p className="text-sm font-semibold text-gray-800">
+                                  {transaction.description ||
+                                    transaction.category}
+                                </p>
+
+                                <p className="text-xs text-slate-400">
+                                  {isIncome
+                                    ? "Income"
+                                    : "Expense"}
+                                </p>
+
+                              </div>
+
+                            </div>
+
+                          </td>
+
+                          <td className="px-5 py-4">
+
+                            <span className="finance-badge finance-badge-info">
+                              {transaction.category}
+                            </span>
+
+                          </td>
+
+                          <td className="px-5 py-4 text-sm text-slate-500">
+                            {formatDate(
+                              transaction.date
+                            )}
+                          </td>
+
+                          <td
+                            className={`px-5 py-4 text-right text-sm font-bold ${
+                              isIncome
+                                ? "text-green-600"
+                                : "text-red-600"
+                            }`}
+                          >
+                            {isIncome
+                              ? "+"
+                              : "-"}
+                            {formatAmount(
+                              transaction.amount
+                            )}
+                          </td>
+
+                          <td className="px-5 py-4">
+
+                            <div className="flex justify-end gap-2">
+
+                              <button
+                                onClick={() =>
+                                  setEditingTransaction(
+                                    transaction
+                                  )
+                                }
+                                className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
+                              >
+                                Edit
+                              </button>
+
+                              <button
+                                onClick={() =>
+                                  handleDelete(
+                                    transaction._id
+                                  )
+                                }
+                                className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                              >
+                                Delete
+                              </button>
+
+                            </div>
+
+                          </td>
+
+                        </tr>
+                      );
+                    }
+                  )}
+
+                </tbody>
+
+              </table>
+
+            </div>
+
+          </div>
+
+        )}
+
+      </div>
+
     </div>
   );
 }

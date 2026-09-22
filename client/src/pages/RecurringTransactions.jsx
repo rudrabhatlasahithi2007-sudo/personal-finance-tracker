@@ -1,33 +1,45 @@
 import { useEffect, useState } from "react";
+import TransactionForm from "../components/TransactionForm";
+import EditTransactionForm from "../components/EditTransactionForm";
 import api from "../api";
 
-import RecurringTransactionForm from "../components/RecurringTransactionForm";
-import RecurringTransactionCard from "../components/RecurringTransactionCard";
+function Transactions() {
+  const [transactions, setTransactions] =
+    useState([]);
 
-function RecurringTransactions() {
-  const [transactions, setTransactions] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [loading, setLoading] =
+    useState(true);
+
+  const [error, setError] =
+    useState("");
 
   const [editingTransaction, setEditingTransaction] =
     useState(null);
 
-  const fetchRecurringTransactions = async () => {
+  const [showForm, setShowForm] =
+    useState(false);
+
+  const [filter, setFilter] =
+    useState("all");
+
+  const fetchTransactions = async () => {
     try {
       setLoading(true);
       setError("");
 
       const response = await api.get(
-        "/recurring-transactions"
+        "/transactions"
       );
 
       setTransactions(
-        response.data.recurringTransactions
+        Array.isArray(response.data)
+          ? response.data
+          : response.data.transactions || []
       );
-    } catch (error) {
+    } catch (err) {
       setError(
-        error.response?.data?.message ||
-          "Failed to load recurring transactions."
+        err.response?.data?.message ||
+          "Unable to load transactions."
       );
     } finally {
       setLoading(false);
@@ -35,363 +47,384 @@ function RecurringTransactions() {
   };
 
   useEffect(() => {
-    fetchRecurringTransactions();
+    fetchTransactions();
   }, []);
-
-  const handleCreated = (newTransaction) => {
-    setTransactions((current) => [
-      newTransaction,
-      ...current,
-    ]);
-  };
 
   const handleDelete = async (id) => {
     const confirmed = window.confirm(
-      "Are you sure you want to delete this recurring transaction?"
+      "Delete this transaction?"
     );
 
-    if (!confirmed) {
-      return;
-    }
+    if (!confirmed) return;
 
     try {
       await api.delete(
-        `/recurring-transactions/${id}`
+        `/transactions/${id}`
       );
 
-      setTransactions((current) =>
-        current.filter(
-          (transaction) => transaction._id !== id
-        )
-      );
-    } catch (error) {
+      fetchTransactions();
+    } catch (err) {
       setError(
-        error.response?.data?.message ||
-          "Failed to delete recurring transaction."
+        err.response?.data?.message ||
+          "Unable to delete transaction."
       );
     }
   };
 
-  const handleToggle = async (transaction) => {
-    try {
-      const response = await api.put(
-        `/recurring-transactions/${transaction._id}`,
-        {
-          active: !transaction.active,
-        }
-      );
+  const filteredTransactions =
+    filter === "all"
+      ? transactions
+      : transactions.filter(
+          (item) => item.type === filter
+        );
 
-      setTransactions((current) =>
-        current.map((item) =>
-          item._id === transaction._id
-            ? response.data.recurringTransaction
-            : item
-        )
-      );
-    } catch (error) {
-      setError(
-        error.response?.data?.message ||
-          "Failed to update recurring transaction."
-      );
-    }
-  };
+  const formatAmount = (amount) =>
+    `₹${Number(amount || 0).toLocaleString(
+      "en-IN"
+    )}`;
 
-  const handleEdit = (transaction) => {
-    setEditingTransaction(transaction);
-  };
-
-  const handleUpdate = async (e) => {
-    e.preventDefault();
-
-    if (!editingTransaction) {
-      return;
-    }
-
-    try {
-      const response = await api.put(
-        `/recurring-transactions/${editingTransaction._id}`,
-        {
-          type: editingTransaction.type,
-          amount: Number(editingTransaction.amount),
-          category: editingTransaction.category,
-          description:
-            editingTransaction.description,
-          frequency:
-            editingTransaction.frequency,
-          startDate:
-            editingTransaction.startDate
-              ?.toString()
-              .split("T")[0],
-          active: editingTransaction.active,
-        }
-      );
-
-      setTransactions((current) =>
-        current.map((item) =>
-          item._id === editingTransaction._id
-            ? response.data.recurringTransaction
-            : item
-        )
-      );
-
-      setEditingTransaction(null);
-      setError("");
-    } catch (error) {
-      setError(
-        error.response?.data?.message ||
-          "Failed to update recurring transaction."
-      );
-    }
-  };
+  const formatDate = (date) =>
+    new Date(date).toLocaleDateString(
+      "en-IN",
+      {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }
+    );
 
   return (
-    <div className="min-h-screen bg-[#F7F8FA]">
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-800">
-            Recurring Transactions
-          </h1>
+    <div className="page-enter min-h-screen bg-[#f8fafc]">
 
-          <p className="mt-1 text-sm text-gray-500">
-            Manage your repeated income and expenses.
-          </p>
-        </div>
+      <div className="mx-auto max-w-7xl px-4 py-6 pb-24 sm:px-6 lg:px-8 lg:pb-8">
 
-        {/* Error */}
-        {error && (
-          <div className="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-            {error}
+        {/* HEADER */}
+
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-blue-600">
+              Money Management
+            </p>
+
+            <h1 className="mt-1 text-2xl font-bold tracking-tight text-gray-900">
+              Transactions
+            </h1>
+
+            <p className="mt-1 text-sm text-slate-500">
+              Manage your income and expenses.
+            </p>
           </div>
-        )}
 
-        {/* Add form */}
-        <div className="mb-6">
-          <RecurringTransactionForm
-            onCreated={handleCreated}
-          />
+          <button
+            onClick={() => {
+              setEditingTransaction(null);
+              setShowForm(true);
+            }}
+            className="finance-button"
+          >
+            + Add Transaction
+          </button>
+
         </div>
 
-        {/* Edit form */}
-        {editingTransaction && (
-          <div className="finance-card mb-6 p-5 sm:p-6">
+        {/* FILTER */}
+
+        <div className="mb-5 flex gap-2 overflow-x-auto">
+
+          {[
+            ["all", "All"],
+            ["income", "Income"],
+            ["expense", "Expenses"],
+          ].map(([value, label]) => (
+            <button
+              key={value}
+              onClick={() =>
+                setFilter(value)
+              }
+              className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+                filter === value
+                  ? "bg-blue-600 text-white"
+                  : "border border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+
+        </div>
+
+        {/* FORM */}
+
+        {showForm && (
+          <div className="mb-6 finance-card p-6">
+
             <div className="mb-5 flex items-center justify-between">
+
               <div>
-                <h2 className="text-lg font-semibold text-gray-800">
-                  Edit Recurring Transaction
+                <h2 className="text-base font-semibold text-gray-900">
+                  Add Transaction
                 </h2>
 
-                <p className="mt-1 text-sm text-gray-500">
-                  Update your recurring transaction details.
+                <p className="mt-1 text-sm text-slate-500">
+                  Record a new income or expense.
                 </p>
               </div>
 
               <button
                 onClick={() =>
-                  setEditingTransaction(null)
+                  setShowForm(false)
                 }
-                className="text-sm font-medium text-gray-500 hover:text-gray-800"
+                className="text-xl text-slate-400 hover:text-slate-700"
               >
-                Cancel
+                ×
               </button>
+
             </div>
 
-            <form
-              onSubmit={handleUpdate}
-              className="grid grid-cols-1 gap-4 md:grid-cols-2"
-            >
-              {/* Type */}
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                  Type
-                </label>
+            <TransactionForm
+              onTransactionAdded={() => {
+                setShowForm(false);
+                fetchTransactions();
+              }}
+            />
 
-                <select
-                  value={editingTransaction.type}
-                  onChange={(e) =>
-                    setEditingTransaction({
-                      ...editingTransaction,
-                      type: e.target.value,
-                    })
-                  }
-                  className="finance-input"
-                >
-                  <option value="expense">
-                    Expense
-                  </option>
-                  <option value="income">
-                    Income
-                  </option>
-                </select>
-              </div>
-
-              {/* Amount */}
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                  Amount
-                </label>
-
-                <input
-                  type="number"
-                  value={editingTransaction.amount}
-                  onChange={(e) =>
-                    setEditingTransaction({
-                      ...editingTransaction,
-                      amount: e.target.value,
-                    })
-                  }
-                  min="0"
-                  step="0.01"
-                  className="finance-input"
-                />
-              </div>
-
-              {/* Category */}
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                  Category
-                </label>
-
-                <input
-                  type="text"
-                  value={editingTransaction.category}
-                  onChange={(e) =>
-                    setEditingTransaction({
-                      ...editingTransaction,
-                      category: e.target.value,
-                    })
-                  }
-                  className="finance-input"
-                />
-              </div>
-
-              {/* Frequency */}
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                  Frequency
-                </label>
-
-                <select
-                  value={editingTransaction.frequency}
-                  onChange={(e) =>
-                    setEditingTransaction({
-                      ...editingTransaction,
-                      frequency: e.target.value,
-                    })
-                  }
-                  className="finance-input"
-                >
-                  <option value="weekly">Weekly</option>
-                  <option value="monthly">Monthly</option>
-                  <option value="yearly">Yearly</option>
-                </select>
-              </div>
-
-              {/* Start Date */}
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                  Start Date
-                </label>
-
-                <input
-                  type="date"
-                  value={
-                    editingTransaction.startDate
-                      ?.toString()
-                      .split("T")[0] || ""
-                  }
-                  onChange={(e) =>
-                    setEditingTransaction({
-                      ...editingTransaction,
-                      startDate: e.target.value,
-                    })
-                  }
-                  className="finance-input"
-                />
-              </div>
-
-              {/* Description */}
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                  Description
-                </label>
-
-                <input
-                  type="text"
-                  value={
-                    editingTransaction.description || ""
-                  }
-                  onChange={(e) =>
-                    setEditingTransaction({
-                      ...editingTransaction,
-                      description: e.target.value,
-                    })
-                  }
-                  className="finance-input"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <button
-                  type="submit"
-                  className="finance-button"
-                >
-                  Save Changes
-                </button>
-              </div>
-            </form>
           </div>
         )}
 
-        {/* Transactions */}
-        <div>
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-800">
-              Your Recurring Transactions
-            </h2>
+        {/* EDIT */}
 
-            {!loading && (
-              <span className="text-sm text-gray-500">
-                {transactions.length}{" "}
-                {transactions.length === 1
-                  ? "transaction"
-                  : "transactions"}
-              </span>
-            )}
+        {editingTransaction && (
+          <div className="mb-6 finance-card p-6">
+
+            <div className="mb-5">
+
+              <h2 className="text-base font-semibold text-gray-900">
+                Edit Transaction
+              </h2>
+
+              <p className="mt-1 text-sm text-slate-500">
+                Update your transaction details.
+              </p>
+
+            </div>
+
+            <EditTransactionForm
+              transaction={editingTransaction}
+              onTransactionUpdated={() => {
+                setEditingTransaction(null);
+                fetchTransactions();
+              }}
+              onCancel={() =>
+                setEditingTransaction(null)
+              }
+            />
+
+          </div>
+        )}
+
+        {/* ERROR */}
+
+        {error && (
+          <div className="mb-5 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
+            {error}
+          </div>
+        )}
+
+        {/* CONTENT */}
+
+        {loading ? (
+
+          <div className="finance-card p-10 text-center">
+            <p className="text-sm text-slate-500">
+              Loading transactions...
+            </p>
           </div>
 
-          {loading ? (
-            <div className="finance-card p-8 text-center text-sm text-gray-500">
-              Loading recurring transactions...
-            </div>
-          ) : transactions.length === 0 ? (
-            <div className="finance-card p-8 text-center">
-              <p className="font-medium text-gray-700">
-                No recurring transactions yet
-              </p>
+        ) : filteredTransactions.length === 0 ? (
 
-              <p className="mt-1 text-sm text-gray-500">
-                Add your first recurring income or expense
-                above.
-              </p>
+          <div className="finance-card px-6 py-16 text-center">
+
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-2xl text-slate-400">
+              ₹
             </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-              {transactions.map((transaction) => (
-                <RecurringTransactionCard
-                  key={transaction._id}
-                  transaction={transaction}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                  onToggle={handleToggle}
-                />
-              ))}
+
+            <h2 className="mt-4 text-base font-semibold text-gray-900">
+              No transactions found
+            </h2>
+
+            <p className="mt-1 text-sm text-slate-500">
+              Add your first transaction to start tracking your finances.
+            </p>
+
+          </div>
+
+        ) : (
+
+          <div className="finance-card overflow-hidden">
+
+            <div className="overflow-x-auto">
+
+              <table className="w-full min-w-[700px]">
+
+                <thead className="border-b border-slate-200 bg-slate-50">
+
+                  <tr>
+
+                    <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">
+                      Transaction
+                    </th>
+
+                    <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">
+                      Category
+                    </th>
+
+                    <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">
+                      Date
+                    </th>
+
+                    <th className="px-5 py-4 text-right text-xs font-semibold uppercase tracking-wider text-slate-400">
+                      Amount
+                    </th>
+
+                    <th className="px-5 py-4 text-right text-xs font-semibold uppercase tracking-wider text-slate-400">
+                      Actions
+                    </th>
+
+                  </tr>
+
+                </thead>
+
+                <tbody className="divide-y divide-slate-100">
+
+                  {filteredTransactions.map(
+                    (transaction) => {
+
+                      const isIncome =
+                        transaction.type ===
+                        "income";
+
+                      return (
+                        <tr
+                          key={
+                            transaction._id
+                          }
+                          className="transition hover:bg-slate-50"
+                        >
+
+                          <td className="px-5 py-4">
+
+                            <div className="flex items-center gap-3">
+
+                              <div
+                                className={`flex h-9 w-9 items-center justify-center rounded-lg ${
+                                  isIncome
+                                    ? "bg-green-50 text-green-600"
+                                    : "bg-red-50 text-red-600"
+                                }`}
+                              >
+                                {isIncome
+                                  ? "↗"
+                                  : "↘"}
+                              </div>
+
+                              <div>
+
+                                <p className="text-sm font-semibold text-gray-800">
+                                  {transaction.description ||
+                                    transaction.category}
+                                </p>
+
+                                <p className="text-xs text-slate-400">
+                                  {isIncome
+                                    ? "Income"
+                                    : "Expense"}
+                                </p>
+
+                              </div>
+
+                            </div>
+
+                          </td>
+
+                          <td className="px-5 py-4">
+
+                            <span className="finance-badge finance-badge-info">
+                              {transaction.category}
+                            </span>
+
+                          </td>
+
+                          <td className="px-5 py-4 text-sm text-slate-500">
+                            {formatDate(
+                              transaction.date
+                            )}
+                          </td>
+
+                          <td
+                            className={`px-5 py-4 text-right text-sm font-bold ${
+                              isIncome
+                                ? "text-green-600"
+                                : "text-red-600"
+                            }`}
+                          >
+                            {isIncome
+                              ? "+"
+                              : "-"}
+                            {formatAmount(
+                              transaction.amount
+                            )}
+                          </td>
+
+                          <td className="px-5 py-4">
+
+                            <div className="flex justify-end gap-2">
+
+                              <button
+                                onClick={() =>
+                                  setEditingTransaction(
+                                    transaction
+                                  )
+                                }
+                                className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
+                              >
+                                Edit
+                              </button>
+
+                              <button
+                                onClick={() =>
+                                  handleDelete(
+                                    transaction._id
+                                  )
+                                }
+                                className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                              >
+                                Delete
+                              </button>
+
+                            </div>
+
+                          </td>
+
+                        </tr>
+                      );
+                    }
+                  )}
+
+                </tbody>
+
+              </table>
+
             </div>
-          )}
-        </div>
+
+          </div>
+
+        )}
+
       </div>
+
     </div>
   );
 }
 
-export default RecurringTransactions;
+export default Transactions;
